@@ -17,9 +17,15 @@ EduUp is an AI-powered educational learning platform designed to help students l
 - Project initialized
 - Git & GitHub configured
 - Project structure created
+- Responsive Navbar
 
 ### Day 2
-- Responsive Navbar
+
+- Improved Hero Section
+- Added Why Choose EduUp section
+- Added feature cards
+- Improved UI consistency
+- Added Bootstrap Icons
 
 ## Status
 
