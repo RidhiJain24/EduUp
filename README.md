@@ -11,6 +11,16 @@ EduUp is an AI-powered educational learning platform designed to help students l
 - Java (Spring Boot)
 - MySQL
 
+## Development Log
+
+### Day 1
+- Project initialized
+- Git & GitHub configured
+- Project structure created
+
+### Day 2
+- Responsive Navbar
+
 ## Status
 
 🚧 Currently under development.
