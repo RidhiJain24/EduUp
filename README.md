@@ -1,32 +1,66 @@
-# EduUp
 
-EduUp is an AI-powered educational learning platform designed to help students learn smarter through personalized learning, AI-powered assignment feedback, progress tracking, gamification, and educational resources.
+# 🎓 EduUp
 
-## Tech Stack
+EduUp is a modern educational platform designed to make learning more organized, engaging, and effective. It aims to provide students with curated learning resources, personalized study tools, progress tracking, and a clean learning experience—all in one place.
 
-- HTML
-- CSS
-- Bootstrap
-- JavaScript
-- Java (Spring Boot)
+## 🚀 Current Status
+
+✅ Landing Page Completed (Version 1)
+
+The landing page includes:
+
+- Responsive Navigation Bar
+- Hero Section
+- Why Choose EduUp
+- Learning Journey
+- Beyond Learning Features
+- Dashboard Preview
+- Student Testimonials
+- FAQ Section
+- Call-to-Action (CTA)
+- Footer
+
+---
+
+## ✨ Planned Features
+
+- User Authentication (Login & Register)
+- Student Dashboard
+- Curated Learning Resources
+- Personalized Learning Path
+- Study Planner
+- Educational Hub
+- Smart Notes & Bookmarks
+- Gamification
+- Career Guidance
+- Progress Analytics
+
+---
+
+## 🛠️ Tech Stack
+
+**Frontend**
+- HTML5
+- CSS3
+- Bootstrap 5
+- JavaScript (Upcoming)
+
+**Backend (Planned)**
+- Spring Boot
 - MySQL
 
-## Development Log
+---
 
-### Day 1
-- Project initialized
-- Git & GitHub configured
-- Project structure created
-- Responsive Navbar
-
-### Day 2
-
-- Improved Hero Section
-- Added Why Choose EduUp section
-- Added feature cards
-- Improved UI consistency
-- Added Bootstrap Icons
-
-## Status
+## 📌 Project Status
 
 🚧 Currently under development.
+
+This repository is being built step by step with regular commits and feature updates.
+
+---
+
+## 👩‍💻 Developer
+
+**Ridhi Jain**
+
+Built as a resume project to demonstrate frontend and full-stack development skills.
