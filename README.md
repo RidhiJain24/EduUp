@@ -3,6 +3,8 @@
 
 EduUp is a modern educational platform designed to make learning more organized, engaging, and effective. It aims to provide students with curated learning resources, personalized study tools, progress tracking, and a clean learning experience—all in one place.
 
+
+
 ## 🚀 Current Status
 
 ✅ Landing Page Completed (Version 1)
@@ -20,7 +22,7 @@ The landing page includes:
 - Call-to-Action (CTA)
 - Footer
 
----
+
 
 ## ✨ Planned Features
 
@@ -35,7 +37,7 @@ The landing page includes:
 - Career Guidance
 - Progress Analytics
 
----
+
 
 ## 🛠️ Tech Stack
 
@@ -49,7 +51,7 @@ The landing page includes:
 - Spring Boot
 - MySQL
 
----
+
 
 ## 📌 Project Status
 
@@ -57,7 +59,7 @@ The landing page includes:
 
 This repository is being built step by step with regular commits and feature updates.
 
----
+
 
 ## 👩‍💻 Developer
 
