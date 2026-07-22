@@ -415,9 +415,46 @@ function Footer() {
   );
 }
 
+const faqs = [
+  { q: "Is EduUp really free?", a: "Yes — EduUp is completely free for students. All core features, including AI feedback, progress tracking, and badges, are available at no cost." },
+  { q: "How does AI assignment review work?", a: "Submit your assignment and our AI reviews it in seconds, offering human-quality feedback, highlighting mistakes, and suggesting clear next steps to improve." },
+  { q: "What subjects/courses are available?", a: "We cover hundreds of courses across math, science, humanities, languages, and computer science — from high school through undergraduate levels." },
+  { q: "Do I need to install anything?", a: "No installation required. EduUp runs entirely in your browser on any device — desktop, tablet, or phone." },
+  { q: "How do badges and streaks work?", a: "You earn badges for milestones like your first submission, subject mastery, and study streaks. Streaks grow each day you complete at least one focused session." },
+  { q: "Is my data safe?", a: "Absolutely. Your assignments and progress data are encrypted in transit and at rest, and we never share personal information with third parties." },
+];
+
+function FAQ() {
+  return (
+    <section id="faq" className="mx-auto max-w-4xl px-6 py-24">
+      <div className="mx-auto max-w-2xl text-center">
+        <div className="text-sm font-semibold uppercase tracking-widest text-accent">FAQ</div>
+        <h2 className="mt-3 text-4xl font-extrabold sm:text-5xl">Questions, answered</h2>
+        <p className="mt-4 text-lg text-muted-foreground">Everything you need to know about learning with EduUp.</p>
+      </div>
+      <Accordion type="single" collapsible className="mt-12 space-y-3">
+        {faqs.map((f, i) => (
+          <AccordionItem
+            key={f.q}
+            value={`item-${i}`}
+            className="rounded-2xl border border-border bg-card px-6 shadow-soft"
+          >
+            <AccordionTrigger className="py-5 text-left text-lg font-semibold hover:no-underline">
+              {f.q}
+            </AccordionTrigger>
+            <AccordionContent className="pb-5 text-base text-muted-foreground">
+              {f.a}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </section>
+  );
+}
+
 function Landing() {
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen scroll-smooth bg-background">
       <Navbar />
       <Hero />
       <Features />
@@ -425,6 +462,7 @@ function Landing() {
       <Stats />
       <Testimonials />
       <CTA />
+      <FAQ />
       <Footer />
     </main>
   );
