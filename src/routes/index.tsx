@@ -313,12 +313,12 @@ function Footer() {
   ];
 
   return (
-    <footer className="border-t border-border bg-secondary/40">
+    <footer className="border-t border-border bg-secondary/70">
       <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
           <div className="max-w-sm">
             <Logo />
-            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-5 text-base leading-relaxed text-muted-foreground">
               AI-powered learning for the next generation of students. Build skills, get feedback, and earn badges on your own schedule.
             </p>
             <div className="mt-6 flex gap-3">
@@ -344,7 +344,7 @@ function Footer() {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="text-base text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
                     </a>
@@ -355,13 +355,13 @@ function Footer() {
           ))}
         </div>
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             © {new Date().getFullYear()} EduUp. All rights reserved.
           </p>
           <div className="flex gap-8">
-            <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Privacy</a>
-            <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Terms</a>
-            <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Cookies</a>
+            <a href="#" className="text-base text-muted-foreground transition-colors hover:text-foreground">Privacy</a>
+            <a href="#" className="text-base text-muted-foreground transition-colors hover:text-foreground">Terms</a>
+            <a href="#" className="text-base text-muted-foreground transition-colors hover:text-foreground">Cookies</a>
           </div>
         </div>
       </div>
