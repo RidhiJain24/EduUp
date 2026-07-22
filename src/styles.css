@@ -59,6 +59,8 @@
   --border: oklch(0.93 0.01 255);
   --input: oklch(0.93 0.01 255);
   --ring: oklch(0.55 0.15 262);
+  --navbar-surface: oklch(0.18 0.03 260);
+  --navbar-foreground: oklch(0.99 0 0 / 0.85);
 }
 
 .dark {
@@ -77,6 +79,8 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.55 0.15 262);
+  --navbar-surface: oklch(0.18 0.03 260);
+  --navbar-foreground: oklch(0.99 0 0 / 0.85);
 }
 
 @layer base {
