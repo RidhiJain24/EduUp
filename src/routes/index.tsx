@@ -25,10 +25,13 @@ export const Route = createFileRoute("/")({
 
 function Logo() {
   return (
-    <a href="#top" className="flex items-center gap-2 font-display font-extrabold text-xl text-foreground">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-        <GraduationCap className="h-5 w-5" />
-      </span>
+    <a href="#top" className="flex items-center gap-2.5 font-display text-xl font-extrabold tracking-tight text-navbar-foreground">
+      <div className="relative">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-tr from-primary to-primary/60 rotate-12 shadow-lg shadow-primary/20">
+          <GraduationCap className="h-5 w-5 -rotate-12 text-navbar-foreground" />
+        </span>
+        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-navbar-surface bg-accent" />
+      </div>
       EduUp
     </a>
   );
@@ -36,6 +39,8 @@ function Logo() {
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -43,25 +48,81 @@ function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const navLinks = [
+    { label: "Features", href: "#features" },
+    { label: "How it works", href: "#how" },
+    { label: "Pricing", href: "#pricing" },
+  ];
+
   return (
-    <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        scrolled ? "border-b border-border bg-background/80 backdrop-blur-xl" : "bg-transparent"
-      }`}
-    >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Logo />
-        <div className="hidden items-center gap-8 md:flex">
-          <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Features</a>
-          <a href="#how" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">How it works</a>
-          <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Pricing</a>
+    <header className="sticky top-0 z-50 w-full px-4 py-4">
+      <nav className="relative mx-auto max-w-7xl group">
+        <div className="absolute -inset-1 rounded-[2.5rem] bg-gradient-to-r from-primary to-accent blur opacity-15 transition duration-1000 group-hover:opacity-25" />
+        <div
+          className={`relative flex items-center justify-between rounded-[2.2rem] border border-navbar-foreground/10 bg-navbar-surface/95 px-5 py-3.5 backdrop-blur-2xl transition-all duration-300 ${
+            scrolled ? "shadow-glow" : "shadow-2xl"
+          }`}
+        >
+          <Logo />
+          <div className="hidden items-center gap-1 md:flex">
+            {navLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className="rounded-full px-4 py-2 text-base font-medium text-navbar-foreground/80 transition-colors hover:bg-navbar-foreground/10 hover:text-navbar-foreground"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+          <div className="hidden items-center gap-2 md:flex">
+            <Button
+              variant="ghost"
+              className="text-base font-medium text-navbar-foreground hover:bg-navbar-foreground/10 hover:text-navbar-foreground"
+            >
+              Log in
+            </Button>
+            <Button className="rounded-full bg-accent px-5 text-base font-semibold text-navbar-foreground shadow-soft transition-transform hover:-translate-y-0.5">
+              Sign up
+            </Button>
+          </div>
+          <button
+            className="flex flex-col items-end gap-1.5 py-2 pl-2 md:hidden"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="h-0.5 w-7 rounded-full bg-navbar-foreground" />
+            <span className={`h-0.5 rounded-full bg-accent transition-all ${mobileOpen ? "w-7" : "w-5"}`} />
+            <span className="h-0.5 w-7 rounded-full bg-navbar-foreground/60" />
+          </button>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" className="hidden sm:inline-flex">Log in</Button>
-          <Button className="rounded-full bg-primary px-5 shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-glow">
-            Sign up
-          </Button>
-        </div>
+        {mobileOpen && (
+          <div className="absolute left-0 right-0 top-full mt-3 rounded-[2rem] border border-navbar-foreground/10 bg-navbar-surface/95 p-4 shadow-2xl backdrop-blur-2xl md:hidden">
+            <div className="flex flex-col gap-2">
+              {navLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="rounded-xl px-4 py-3 text-base font-medium text-navbar-foreground/80 transition-colors hover:bg-navbar-foreground/10 hover:text-navbar-foreground"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </a>
+              ))}
+              <div className="mt-2 flex flex-col gap-2 border-t border-navbar-foreground/10 pt-3">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-base font-medium text-navbar-foreground hover:bg-navbar-foreground/10 hover:text-navbar-foreground"
+                >
+                  Log in
+                </Button>
+                <Button className="w-full rounded-full bg-accent text-base font-semibold text-navbar-foreground">
+                  Sign up
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );
