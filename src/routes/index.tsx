@@ -48,7 +48,6 @@ function Navbar() {
   const navLinks = [
     { label: "Features", href: "#features" },
     { label: "How it works", href: "#how" },
-    { label: "Pricing", href: "#pricing" },
   ];
 
   return (
@@ -332,26 +331,14 @@ function Footer() {
       links: [
         { label: "Features", href: "#features" },
         { label: "How it works", href: "#how" },
-        { label: "Pricing", href: "#pricing" },
         { label: "Courses", href: "#" },
-      ],
-    },
-    {
-      title: "Resources",
-      links: [
-        { label: "Help Center", href: "#" },
-        { label: "Blog", href: "#" },
-        { label: "Community", href: "#" },
-        { label: "Study Guides", href: "#" },
       ],
     },
     {
       title: "Company",
       links: [
         { label: "About", href: "#" },
-        { label: "Careers", href: "#" },
         { label: "Contact", href: "#" },
-        { label: "Press", href: "#" },
       ],
     },
   ];
@@ -366,7 +353,7 @@ function Footer() {
   return (
     <footer className="border-t border-border bg-secondary/70">
       <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]">
           <div className="max-w-sm">
             <Logo />
             <p className="mt-5 text-base leading-relaxed text-muted-foreground">
