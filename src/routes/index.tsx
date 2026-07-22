@@ -275,48 +275,93 @@ function CTA() {
 }
 
 function Footer() {
+  const linkGroups = [
+    {
+      title: "Product",
+      links: [
+        { label: "Features", href: "#features" },
+        { label: "How it works", href: "#how" },
+        { label: "Pricing", href: "#pricing" },
+        { label: "Courses", href: "#" },
+      ],
+    },
+    {
+      title: "Resources",
+      links: [
+        { label: "Help Center", href: "#" },
+        { label: "Blog", href: "#" },
+        { label: "Community", href: "#" },
+        { label: "Study Guides", href: "#" },
+      ],
+    },
+    {
+      title: "Company",
+      links: [
+        { label: "About", href: "#" },
+        { label: "Careers", href: "#" },
+        { label: "Contact", href: "#" },
+        { label: "Press", href: "#" },
+      ],
+    },
+  ];
+
+  const socials = [
+    { icon: Twitter, label: "Twitter", href: "#" },
+    { icon: Github, label: "GitHub", href: "#" },
+    { icon: Linkedin, label: "LinkedIn", href: "#" },
+    { icon: Youtube, label: "YouTube", href: "#" },
+  ];
+
   return (
-    <footer className="border-t border-border bg-secondary/30">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <Logo />
-          <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-            AI-powered learning for the next generation of students.
-          </p>
-        </div>
-        <div>
-          <div className="text-sm font-semibold">Product</div>
-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-            <li><a href="#features" className="transition-colors hover:text-foreground">Features</a></li>
-            <li><a href="#how" className="transition-colors hover:text-foreground">How it works</a></li>
-            <li><a href="#pricing" className="transition-colors hover:text-foreground">Pricing</a></li>
-          </ul>
-        </div>
-        <div>
-          <div className="text-sm font-semibold">Company</div>
-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-            <li><a href="#" className="transition-colors hover:text-foreground">About</a></li>
-            <li><a href="#" className="transition-colors hover:text-foreground">Careers</a></li>
-            <li><a href="#" className="transition-colors hover:text-foreground">Contact</a></li>
-          </ul>
-        </div>
-        <div>
-          <div className="text-sm font-semibold">Follow</div>
-          <div className="mt-4 flex gap-3">
-            {[Twitter, Github, Linkedin, Youtube].map((Icon, i) => (
-              <a key={i} href="#" className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary">
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
+    <footer className="border-t border-border bg-secondary/40">
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
+          <div className="max-w-sm">
+            <Logo />
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+              AI-powered learning for the next generation of students. Build skills, get feedback, and earn badges on your own schedule.
+            </p>
+            <div className="mt-6 flex gap-3">
+              {socials.map(({ icon: Icon, label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-muted-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-soft"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
           </div>
+          {linkGroups.map((group) => (
+            <div key={group.title}>
+              <div className="text-sm font-semibold uppercase tracking-widest text-foreground">
+                {group.title}
+              </div>
+              <ul className="mt-5 space-y-3">
+                {group.links.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-      </div>
-      <div className="border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-6 text-xs text-muted-foreground sm:flex-row">
-          <div>© {new Date().getFullYear()} EduUp. All rights reserved.</div>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-foreground">Privacy</a>
-            <a href="#" className="hover:text-foreground">Terms</a>
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} EduUp. All rights reserved.
+          </p>
+          <div className="flex gap-8">
+            <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Privacy</a>
+            <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Terms</a>
+            <a href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Cookies</a>
           </div>
         </div>
       </div>
