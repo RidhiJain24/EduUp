@@ -17,6 +17,12 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import heroImg from "@/assets/hero-learning.jpg";
 
 export const Route = createFileRoute("/")({
