@@ -48,6 +48,8 @@ function Navbar() {
   const navLinks = [
     { label: "Features", href: "#features" },
     { label: "How it works", href: "#how" },
+    { label: "About", href: "#top" },
+    { label: "FAQ", href: "#faq" },
   ];
 
   return (
