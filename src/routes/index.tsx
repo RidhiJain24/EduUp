@@ -52,9 +52,9 @@ function Navbar() {
   }, []);
 
   const navLinks = [
+    { label: "About", href: "#top" },
     { label: "Features", href: "#features" },
     { label: "How it works", href: "#how" },
-    { label: "About", href: "#top" },
     { label: "FAQ", href: "#faq" },
   ];
 
@@ -308,7 +308,7 @@ function Testimonials() {
 
 function CTA() {
   return (
-    <section id="pricing" className="mx-auto max-w-7xl px-6 pb-24">
+    <section id="contact" className="mx-auto max-w-7xl px-6 pb-24">
       <div className="relative overflow-hidden rounded-3xl bg-primary px-8 py-16 text-center shadow-glow sm:px-16 sm:py-20">
         <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/30 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
@@ -345,8 +345,8 @@ function Footer() {
     {
       title: "Company",
       links: [
-        { label: "About", href: "#" },
-        { label: "Contact", href: "#" },
+        { label: "About", href: "#top" },
+        { label: "Contact", href: "#contact" },
       ],
     },
   ];
