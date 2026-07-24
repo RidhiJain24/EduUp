@@ -109,13 +109,14 @@ function Navbar() {
               ))}
               <div className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
                 <Button
+                  asChild
                   variant="ghost"
                   className="w-full justify-start text-lg font-medium text-card-foreground hover:bg-muted"
                 >
-                  Log in
+                  <Link to="/login" onClick={() => setMobileOpen(false)}>Log in</Link>
                 </Button>
-                <Button className="w-full rounded-full bg-primary text-lg font-semibold text-primary-foreground">
-                  Sign up
+                <Button asChild className="w-full rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+                  <Link to="/signup" onClick={() => setMobileOpen(false)}>Sign up</Link>
                 </Button>
               </div>
             </div>
