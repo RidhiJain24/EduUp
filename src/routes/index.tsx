@@ -75,13 +75,14 @@ function Navbar() {
         </div>
         <div className="hidden items-center gap-3 md:flex">
           <Button
+            asChild
             variant="ghost"
             className="text-lg font-medium text-foreground hover:bg-muted"
           >
-            Log in
+            <Link to="/login">Log in</Link>
           </Button>
-          <Button className="rounded-full bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5">
-            Sign up
+          <Button asChild className="rounded-full bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5">
+            <Link to="/signup">Sign up</Link>
           </Button>
         </div>
         <button
