@@ -68,8 +68,8 @@ function SignupPage() {
                 <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                 <Input id="password" type="password" placeholder="At least 8 characters" className="h-11 rounded-xl" />
               </div>
-              <div className="flex items-start gap-2.5 pt-1">
-                <Checkbox id="terms" className="mt-0.5" />
+              <div className="flex items-start gap-3 pt-1">
+                <Checkbox id="terms" className="mt-0.5 h-5 w-5 rounded-[4px] border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground" />
                 <Label htmlFor="terms" className="text-sm font-normal leading-relaxed text-muted-foreground">
                   I agree to the{" "}
                   <a href="#" className="font-medium text-primary hover:underline">Terms</a>
