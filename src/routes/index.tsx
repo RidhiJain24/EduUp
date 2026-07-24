@@ -145,9 +145,11 @@ function Hero() {
             EduUp turns every assignment into a coaching session. Pick a course, submit your work, and get instant, personalized guidance — plus badges for every milestone.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button size="lg" className="group rounded-full bg-primary px-7 py-6 text-base shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-glow">
-              Get Started Free
-              <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <Button asChild size="lg" className="group rounded-full bg-primary px-7 py-6 text-base shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-glow">
+              <Link to="/signup">
+                Get Started Free
+                <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
             <Button size="lg" variant="outline" className="group rounded-full border-border bg-background px-7 py-6 text-base transition-colors hover:bg-secondary">
               <Play className="mr-1 h-4 w-4 text-accent" />
