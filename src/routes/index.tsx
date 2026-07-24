@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Sparkles,
@@ -75,13 +75,14 @@ function Navbar() {
         </div>
         <div className="hidden items-center gap-3 md:flex">
           <Button
+            asChild
             variant="ghost"
             className="text-lg font-medium text-foreground hover:bg-muted"
           >
-            Log in
+            <Link to="/login">Log in</Link>
           </Button>
-          <Button className="rounded-full bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5">
-            Sign up
+          <Button asChild className="rounded-full bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5">
+            <Link to="/signup">Sign up</Link>
           </Button>
         </div>
         <button
@@ -108,13 +109,14 @@ function Navbar() {
               ))}
               <div className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
                 <Button
+                  asChild
                   variant="ghost"
                   className="w-full justify-start text-lg font-medium text-card-foreground hover:bg-muted"
                 >
-                  Log in
+                  <Link to="/login" onClick={() => setMobileOpen(false)}>Log in</Link>
                 </Button>
-                <Button className="w-full rounded-full bg-primary text-lg font-semibold text-primary-foreground">
-                  Sign up
+                <Button asChild className="w-full rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+                  <Link to="/signup" onClick={() => setMobileOpen(false)}>Sign up</Link>
                 </Button>
               </div>
             </div>
@@ -143,9 +145,11 @@ function Hero() {
             EduUp turns every assignment into a coaching session. Pick a course, submit your work, and get instant, personalized guidance — plus badges for every milestone.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button size="lg" className="group rounded-full bg-primary px-7 py-6 text-base shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-glow">
-              Get Started Free
-              <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <Button asChild size="lg" className="group rounded-full bg-primary px-7 py-6 text-base shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-glow">
+              <Link to="/signup">
+                Get Started Free
+                <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
             <Button size="lg" variant="outline" className="group rounded-full border-border bg-background px-7 py-6 text-base transition-colors hover:bg-secondary">
               <Play className="mr-1 h-4 w-4 text-accent" />
