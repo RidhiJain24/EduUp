@@ -52,6 +52,7 @@ function AuthBackground({ children }: { children: React.ReactNode }) {
 }
 
 function LoginPage() {
+  const navigate = useNavigate();
   return (
     <AuthBackground>
       <div className="w-full max-w-md">
@@ -63,7 +64,13 @@ function LoginPage() {
             Log in to keep your streak going.
           </p>
 
-          <form className="mt-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="mt-8 space-y-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              navigate({ to: "/dashboard" });
+            }}
+          >
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input id="email" type="email" placeholder="you@school.edu" className="h-11 rounded-xl" />
@@ -81,6 +88,7 @@ function LoginPage() {
               Log in
             </Button>
           </form>
+
 
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
