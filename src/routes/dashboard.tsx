@@ -10,7 +10,6 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Sparkles,
   Star,
   Rocket,
   LogOut,
@@ -19,11 +18,14 @@ import {
   Zap,
   LineChart,
   MessageSquare,
-  Gamepad2,
   Brain,
   Puzzle,
   Calculator,
-  X,
+  Youtube,
+  ArrowRight,
+  Newspaper,
+  Briefcase,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,23 +39,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — EduUp" },
-      { name: "description", content: "Your EduUp learning dashboard — start your learning journey with courses, badges and AI feedback." },
+      { name: "description", content: "Your EduUp learning dashboard — search CS topics, take mindful breaks, and stay on top of tech news." },
       { property: "og:title", content: "Dashboard — EduUp" },
-      { property: "og:description", content: "Your EduUp learning dashboard — start your learning journey with courses, badges and AI feedback." },
+      { property: "og:description", content: "Your EduUp learning dashboard — search CS topics, take mindful breaks, and stay on top of tech news." },
     ],
   }),
   component: Dashboard,
@@ -225,94 +218,141 @@ function QuickStats() {
   );
 }
 
-const recommended = [
-  { title: "Intro to Machine Learning", category: "Computer Science", level: "Beginner", gradient: "from-primary to-blue-500", emoji: "🤖" },
-  { title: "Calculus II — Integrals", category: "Mathematics", level: "Intermediate", gradient: "from-accent to-orange-500", emoji: "📐" },
-  { title: "Modern World History", category: "Humanities", level: "Beginner", gradient: "from-emerald-500 to-teal-500", emoji: "🌍" },
-  { title: "Creative Writing 101", category: "Language Arts", level: "Beginner", gradient: "from-pink-500 to-rose-500", emoji: "✍️" },
+const trendingTopics = [
+  "Data Structures",
+  "OOP",
+  "DBMS",
+  "Operating Systems",
+  "React",
+  "System Design",
 ];
 
-function GetStarted() {
+const samplePlaylists = [
+  {
+    title: "Binary Search Trees — Full Course",
+    channel: "Abdul Bari",
+    videos: 18,
+    thumbGradient: "from-primary to-blue-500",
+    emoji: "🌳",
+  },
+  {
+    title: "BSTs Explained Visually",
+    channel: "freeCodeCamp",
+    videos: 12,
+    thumbGradient: "from-accent to-orange-500",
+    emoji: "🎥",
+  },
+  {
+    title: "Trees & BST Interview Prep",
+    channel: "NeetCode",
+    videos: 24,
+    thumbGradient: "from-emerald-500 to-teal-500",
+    emoji: "💡",
+  },
+  {
+    title: "Data Structures — Trees Deep Dive",
+    channel: "CS Dojo",
+    videos: 9,
+    thumbGradient: "from-pink-500 to-rose-500",
+    emoji: "📚",
+  },
+];
+
+function SearchTopic() {
+  const [query, setQuery] = useState("");
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) setActiveTopic(query.trim());
+  };
+
+  const pickTopic = (t: string) => {
+    setQuery(t);
+    setActiveTopic(t);
+  };
+
   return (
     <section id="courses">
-      <div className="mb-6 flex items-end justify-between">
-        <div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Get started</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Popular courses picked for new learners.</p>
-        </div>
-        <a href="#" className="text-sm font-semibold text-primary hover:underline">Browse all</a>
+      <div className="mb-6">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Search a topic</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Find curated YouTube playlists for any CS topic.</p>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-2 xl:grid-cols-4 lg:overflow-visible lg:px-0">
-        {recommended.map((c) => (
-          <div
-            key={c.title}
-            className="w-72 shrink-0 snap-start overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 lg:w-auto"
+
+      <form onSubmit={handleSearch} className="relative">
+        <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search a CS topic (e.g. Binary Search Trees, React Hooks, Dynamic Programming)..."
+          className="h-14 rounded-full border-border bg-card pl-14 pr-32 text-base shadow-soft"
+        />
+        <Button
+          type="submit"
+          className="absolute right-2 top-1/2 h-10 -translate-y-1/2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+        >
+          Search
+        </Button>
+      </form>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trending:</span>
+        {trendingTopics.map((t) => (
+          <button
+            key={t}
+            onClick={() => pickTopic(t)}
+            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
+              activeTopic === t
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-foreground hover:border-primary hover:text-primary"
+            }`}
           >
-            <div className={`flex h-32 items-center justify-center bg-gradient-to-br ${c.gradient} text-5xl`}>
-              {c.emoji}
-            </div>
-            <div className="p-6">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{c.category}</p>
-              <h3 className="mt-1.5 font-display text-lg font-bold text-foreground">{c.title}</h3>
-              <p className="mt-2 inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                {c.level}
-              </p>
-              <Button className="mt-5 h-10 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Enroll
-              </Button>
-            </div>
-          </div>
+            {t}
+          </button>
         ))}
       </div>
-    </section>
-  );
-}
 
-function TakeABreakDialog() {
-  const games = [
-    { name: "Word Scramble", desc: "Unscramble letters to form real words against the clock.", icon: Puzzle, tint: "from-primary to-blue-500" },
-    { name: "Quick Math Quiz", desc: "Sharpen your mental math with 60 seconds of quick sums.", icon: Calculator, tint: "from-accent to-orange-500" },
-    { name: "Memory Match", desc: "Flip cards and match pairs to boost focus and memory.", icon: Brain, tint: "from-emerald-500 to-teal-500" },
-  ];
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-accent/15 px-4 py-2.5 text-sm font-semibold text-foreground transition-transform hover:-translate-y-0.5 hover:bg-accent/25">
-          <Gamepad2 className="h-4 w-4 text-accent" />
-          Feeling tired? Play a quick game 🎮
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl rounded-3xl border-border p-6 sm:p-8">
-        <DialogHeader className="text-left">
-          <DialogTitle className="font-display text-2xl font-bold">Take a break</DialogTitle>
-          <DialogDescription className="text-sm">
-            Recharge with a quick brain game. Pick one below.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {games.map((g) => (
-            <div key={g.name} className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-soft transition-transform hover:-translate-y-0.5">
-              <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${g.tint} text-white shadow-soft`}>
-                <g.icon className="h-6 w-6" />
+      {activeTopic && (
+        <div className="mt-8">
+          <div className="mb-5 flex items-end justify-between">
+            <h3 className="font-display text-xl font-bold text-foreground">
+              Playlists for <span className="text-primary">{activeTopic}</span>
+            </h3>
+            <button
+              onClick={() => { setActiveTopic(null); setQuery(""); }}
+              className="text-sm font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {samplePlaylists.map((p) => (
+              <div
+                key={p.title}
+                className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1"
+              >
+                <div className={`relative flex h-36 items-center justify-center bg-gradient-to-br ${p.thumbGradient} text-5xl`}>
+                  {p.emoji}
+                  <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white">
+                    <Youtube className="h-4 w-4" />
+                  </span>
+                  <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2 py-0.5 text-xs font-semibold text-white">
+                    {p.videos} videos
+                  </span>
+                </div>
+                <div className="p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{p.channel}</p>
+                  <h4 className="mt-1.5 font-display text-base font-bold text-foreground line-clamp-2">{p.title}</h4>
+                  <Button className="mt-4 h-10 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
+                    <Play className="mr-1.5 h-3.5 w-3.5" /> Start Learning
+                  </Button>
+                </div>
               </div>
-              <h3 className="mt-4 font-display text-base font-bold text-foreground">{g.name}</h3>
-              <p className="mt-1 flex-1 text-xs text-muted-foreground">{g.desc}</p>
-              <Button className="mt-4 h-9 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
-                <Play className="mr-1.5 h-3.5 w-3.5" /> Play
-              </Button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-        <DialogClose asChild>
-          <button
-            aria-label="Close"
-            className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </DialogClose>
-      </DialogContent>
-    </Dialog>
+      )}
+    </section>
   );
 }
 
@@ -378,9 +418,45 @@ function StudyTimer() {
       <p className="mt-4 rounded-xl bg-accent/10 px-3 py-2 text-xs font-medium text-foreground">
         💧 Take a water break every 45 mins.
       </p>
-
-      <TakeABreakDialog />
     </div>
+  );
+}
+
+const breakGames = [
+  { name: "Word Scramble", desc: "Unscramble letters to form real words against the clock.", icon: Puzzle, tint: "from-primary to-blue-500" },
+  { name: "Quick Math Quiz", desc: "Sharpen your mental math with 60 seconds of quick sums.", icon: Calculator, tint: "from-accent to-orange-500" },
+  { name: "Memory Match", desc: "Flip cards and match pairs to boost focus and memory.", icon: Brain, tint: "from-emerald-500 to-teal-500" },
+];
+
+function TakeABreak() {
+  return (
+    <section className="rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
+      <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            Feeling tired? Refresh your mind 🎮
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">Quick brain games to recharge between study sessions.</p>
+        </div>
+      </div>
+      <div className="grid gap-5 sm:grid-cols-3">
+        {breakGames.map((g) => (
+          <div
+            key={g.name}
+            className="flex flex-col rounded-2xl border border-border bg-background p-6 shadow-soft transition-transform hover:-translate-y-1"
+          >
+            <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${g.tint} text-white shadow-soft`}>
+              <g.icon className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 font-display text-base font-bold text-foreground">{g.name}</h3>
+            <p className="mt-1 flex-1 text-sm text-muted-foreground">{g.desc}</p>
+            <Button className="mt-5 h-10 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
+              <Play className="mr-1.5 h-3.5 w-3.5" /> Play
+            </Button>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -457,6 +533,70 @@ function FeedbackEmpty() {
   );
 }
 
+const newsItems = [
+  {
+    tag: "Internship",
+    tagIcon: Briefcase,
+    tagTint: "bg-primary/10 text-primary",
+    title: "Google Summer of Code 2027 applications open",
+    summary: "Students can now apply for GSoC 2027 — over 200 mentoring orgs participating this year.",
+  },
+  {
+    tag: "News",
+    tagIcon: Newspaper,
+    tagTint: "bg-accent/15 text-accent",
+    title: "New JavaScript framework trending on GitHub",
+    summary: "A lightweight reactive framework hit 30k stars in a week — here's what makes it different.",
+  },
+  {
+    tag: "Career Tip",
+    tagIcon: Lightbulb,
+    tagTint: "bg-emerald-500/10 text-emerald-600",
+    title: "Top 5 DSA patterns every interview asks",
+    summary: "Master sliding window, two pointers, and three more patterns that unlock 80% of problems.",
+  },
+  {
+    tag: "News",
+    tagIcon: Newspaper,
+    tagTint: "bg-accent/15 text-accent",
+    title: "AI copilots reshape entry-level developer roles",
+    summary: "How new grads are adapting workflows and what skills recruiters value most in 2027.",
+  },
+];
+
+function StudyNews() {
+  return (
+    <section>
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            What's happening in tech 📰
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">Handpicked news, internships, and career tips for CS students.</p>
+        </div>
+        <a href="#" className="hidden text-sm font-semibold text-primary hover:underline sm:inline">View all</a>
+      </div>
+      <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-2 xl:grid-cols-4 lg:overflow-visible lg:px-0">
+        {newsItems.map((n) => (
+          <article
+            key={n.title}
+            className="flex w-72 shrink-0 snap-start flex-col rounded-2xl border border-border bg-card p-6 shadow-soft transition-transform hover:-translate-y-1 lg:w-auto"
+          >
+            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${n.tagTint}`}>
+              <n.tagIcon className="h-3.5 w-3.5" /> {n.tag}
+            </span>
+            <h3 className="mt-4 font-display text-base font-bold text-foreground">{n.title}</h3>
+            <p className="mt-2 flex-1 text-sm text-muted-foreground">{n.summary}</p>
+            <a href="#" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+              Read more <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Dashboard() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -471,16 +611,18 @@ function Dashboard() {
 
           <div className="grid gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">
             <div className="space-y-16 sm:space-y-20">
-              <GetStarted />
-              <ProgressEmpty />
+              <SearchTopic />
             </div>
             <div className="space-y-6">
               <StudyTimer />
             </div>
           </div>
 
+          <TakeABreak />
+          <ProgressEmpty />
           <BadgesEmpty />
           <FeedbackEmpty />
+          <StudyNews />
         </main>
       </div>
     </div>
