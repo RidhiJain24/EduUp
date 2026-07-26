@@ -218,65 +218,237 @@ function QuickStats() {
   );
 }
 
-const trendingTopics = [
-  "Data Structures",
-  "OOP",
-  "DBMS",
-  "Operating Systems",
-  "React",
-  "System Design",
-];
+const subjects = ["DSA", "DBMS", "System Design", "OOP", "Operating Systems", "Computer Networks"];
 
-const samplePlaylists = [
-  {
-    title: "Binary Search Trees — Full Course",
-    channel: "Abdul Bari",
-    videos: 18,
-    thumbGradient: "from-primary to-blue-500",
-    emoji: "🌳",
+type Playlist = {
+  title: string;
+  channel: string;
+  videos: number;
+  thumbGradient: string;
+  emoji: string;
+};
+
+const subjectData: Record<
+  string,
+  { subtopics: string[]; playlists: Record<string, Playlist[]> }
+> = {
+  DSA: {
+    subtopics: ["All", "Recursion", "Binary Search Trees", "Linked Lists", "Graphs", "Sorting Algorithms"],
+    playlists: {
+      All: [
+        { title: "Complete DSA Bootcamp", channel: "Abdul Bari", videos: 82, thumbGradient: "from-primary to-blue-500", emoji: "🧩" },
+        { title: "DSA Full Course in C++", channel: "CodeHelp - Love Babbar", videos: 120, thumbGradient: "from-accent to-orange-500", emoji: "💻" },
+        { title: "Data Structures Masterclass", channel: "freeCodeCamp", videos: 65, thumbGradient: "from-emerald-500 to-teal-500", emoji: "📚" },
+        { title: "DSA for Interviews", channel: "NeetCode", videos: 150, thumbGradient: "from-pink-500 to-rose-500", emoji: "🎯" },
+      ],
+      Recursion: [
+        { title: "Recursion Mastery", channel: "Aditya Verma", videos: 22, thumbGradient: "from-primary to-blue-500", emoji: "🔁" },
+        { title: "Recursion + Backtracking", channel: "Striver", videos: 18, thumbGradient: "from-accent to-orange-500", emoji: "🌀" },
+        { title: "Recursion Made Simple", channel: "CodeHelp", videos: 15, thumbGradient: "from-emerald-500 to-teal-500", emoji: "🧠" },
+      ],
+      "Binary Search Trees": [
+        { title: "BSTs — Full Course", channel: "Abdul Bari", videos: 18, thumbGradient: "from-primary to-blue-500", emoji: "🌳" },
+        { title: "BSTs Explained Visually", channel: "freeCodeCamp", videos: 12, thumbGradient: "from-accent to-orange-500", emoji: "🎥" },
+        { title: "Trees & BST Interview Prep", channel: "NeetCode", videos: 24, thumbGradient: "from-emerald-500 to-teal-500", emoji: "💡" },
+      ],
+      "Linked Lists": [
+        { title: "Linked Lists — Deep Dive", channel: "Striver", videos: 20, thumbGradient: "from-primary to-blue-500", emoji: "🔗" },
+        { title: "LinkedList Playlist", channel: "CodeHelp", videos: 14, thumbGradient: "from-accent to-orange-500", emoji: "➰" },
+        { title: "Linked List Patterns", channel: "NeetCode", videos: 16, thumbGradient: "from-emerald-500 to-teal-500", emoji: "🧵" },
+      ],
+      Graphs: [
+        { title: "Graphs Series", channel: "Striver", videos: 55, thumbGradient: "from-primary to-blue-500", emoji: "🕸️" },
+        { title: "Graph Algorithms", channel: "Abdul Bari", videos: 30, thumbGradient: "from-accent to-orange-500", emoji: "🗺️" },
+        { title: "Graph Interview Qs", channel: "NeetCode", videos: 40, thumbGradient: "from-emerald-500 to-teal-500", emoji: "🔗" },
+      ],
+      "Sorting Algorithms": [
+        { title: "All Sorting Algorithms", channel: "Abdul Bari", videos: 12, thumbGradient: "from-primary to-blue-500", emoji: "📊" },
+        { title: "Sorting Visualized", channel: "freeCodeCamp", videos: 10, thumbGradient: "from-accent to-orange-500", emoji: "🎞️" },
+        { title: "Quick, Merge & Heap Sort", channel: "CS Dojo", videos: 8, thumbGradient: "from-emerald-500 to-teal-500", emoji: "⚡" },
+      ],
+    },
   },
-  {
-    title: "BSTs Explained Visually",
-    channel: "freeCodeCamp",
-    videos: 12,
-    thumbGradient: "from-accent to-orange-500",
-    emoji: "🎥",
+  DBMS: {
+    subtopics: ["All", "Normalization", "SQL Queries", "Transactions & Concurrency", "Indexing"],
+    playlists: {
+      All: [
+        { title: "Complete DBMS Course", channel: "Gate Smashers", videos: 90, thumbGradient: "from-primary to-blue-500", emoji: "🗄️" },
+        { title: "DBMS Full Tutorial", channel: "Knowledge Gate", videos: 75, thumbGradient: "from-accent to-orange-500", emoji: "📂" },
+        { title: "Database Systems", channel: "freeCodeCamp", videos: 45, thumbGradient: "from-emerald-500 to-teal-500", emoji: "💾" },
+      ],
+      Normalization: [
+        { title: "Normalization Explained", channel: "Gate Smashers", videos: 8, thumbGradient: "from-primary to-blue-500", emoji: "📐" },
+        { title: "1NF to BCNF Deep Dive", channel: "Jenny's Lectures", videos: 10, thumbGradient: "from-accent to-orange-500", emoji: "🧮" },
+      ],
+      "SQL Queries": [
+        { title: "SQL for Beginners", channel: "freeCodeCamp", videos: 30, thumbGradient: "from-primary to-blue-500", emoji: "🧾" },
+        { title: "Advanced SQL Queries", channel: "Mosh", videos: 22, thumbGradient: "from-accent to-orange-500", emoji: "🔍" },
+        { title: "SQL Interview Questions", channel: "TechTFQ", videos: 40, thumbGradient: "from-emerald-500 to-teal-500", emoji: "💬" },
+      ],
+      "Transactions & Concurrency": [
+        { title: "Transactions & ACID", channel: "Gate Smashers", videos: 12, thumbGradient: "from-primary to-blue-500", emoji: "🔒" },
+        { title: "Concurrency Control", channel: "Knowledge Gate", videos: 9, thumbGradient: "from-accent to-orange-500", emoji: "🔀" },
+      ],
+      Indexing: [
+        { title: "Indexing in DBMS", channel: "Gate Smashers", videos: 7, thumbGradient: "from-primary to-blue-500", emoji: "📇" },
+        { title: "B-Trees & B+ Trees", channel: "Abdul Bari", videos: 6, thumbGradient: "from-accent to-orange-500", emoji: "🌲" },
+      ],
+    },
   },
-  {
-    title: "Trees & BST Interview Prep",
-    channel: "NeetCode",
-    videos: 24,
-    thumbGradient: "from-emerald-500 to-teal-500",
-    emoji: "💡",
+  "System Design": {
+    subtopics: ["All", "Load Balancing", "Caching", "Database Sharding", "Microservices"],
+    playlists: {
+      All: [
+        { title: "System Design Primer", channel: "Gaurav Sen", videos: 60, thumbGradient: "from-primary to-blue-500", emoji: "🏗️" },
+        { title: "System Design Masterclass", channel: "ByteByteGo", videos: 45, thumbGradient: "from-accent to-orange-500", emoji: "⚙️" },
+        { title: "HLD & LLD Playlist", channel: "CodeKarle", videos: 38, thumbGradient: "from-emerald-500 to-teal-500", emoji: "🧱" },
+      ],
+      "Load Balancing": [
+        { title: "Load Balancers Explained", channel: "ByteByteGo", videos: 6, thumbGradient: "from-primary to-blue-500", emoji: "⚖️" },
+        { title: "L4 vs L7 Load Balancing", channel: "Gaurav Sen", videos: 5, thumbGradient: "from-accent to-orange-500", emoji: "🔁" },
+      ],
+      Caching: [
+        { title: "Caching Strategies", channel: "ByteByteGo", videos: 8, thumbGradient: "from-primary to-blue-500", emoji: "⚡" },
+        { title: "Redis & Memcached", channel: "Hussein Nasser", videos: 12, thumbGradient: "from-accent to-orange-500", emoji: "🧊" },
+      ],
+      "Database Sharding": [
+        { title: "Sharding Deep Dive", channel: "Gaurav Sen", videos: 5, thumbGradient: "from-primary to-blue-500", emoji: "🧩" },
+        { title: "Partitioning & Sharding", channel: "ByteByteGo", videos: 7, thumbGradient: "from-accent to-orange-500", emoji: "📦" },
+      ],
+      Microservices: [
+        { title: "Microservices Architecture", channel: "Fireship", videos: 10, thumbGradient: "from-primary to-blue-500", emoji: "🧬" },
+        { title: "Microservices Patterns", channel: "CodeKarle", videos: 14, thumbGradient: "from-accent to-orange-500", emoji: "🛰️" },
+      ],
+    },
   },
-  {
-    title: "Data Structures — Trees Deep Dive",
-    channel: "CS Dojo",
-    videos: 9,
-    thumbGradient: "from-pink-500 to-rose-500",
-    emoji: "📚",
+  OOP: {
+    subtopics: ["All", "Encapsulation", "Inheritance", "Polymorphism", "Abstraction", "SOLID Principles"],
+    playlists: {
+      All: [
+        { title: "Complete OOP Course", channel: "Telusko", videos: 40, thumbGradient: "from-primary to-blue-500", emoji: "🧱" },
+        { title: "OOP in Java", channel: "Kunal Kushwaha", videos: 32, thumbGradient: "from-accent to-orange-500", emoji: "☕" },
+        { title: "OOP Concepts Explained", channel: "freeCodeCamp", videos: 25, thumbGradient: "from-emerald-500 to-teal-500", emoji: "🎓" },
+      ],
+      Encapsulation: [
+        { title: "Encapsulation Deep Dive", channel: "Telusko", videos: 5, thumbGradient: "from-primary to-blue-500", emoji: "📦" },
+      ],
+      Inheritance: [
+        { title: "Inheritance Explained", channel: "Kunal Kushwaha", videos: 6, thumbGradient: "from-primary to-blue-500", emoji: "🧬" },
+        { title: "Inheritance Types", channel: "Telusko", videos: 4, thumbGradient: "from-accent to-orange-500", emoji: "🌿" },
+      ],
+      Polymorphism: [
+        { title: "Polymorphism in OOP", channel: "Telusko", videos: 5, thumbGradient: "from-primary to-blue-500", emoji: "🎭" },
+      ],
+      Abstraction: [
+        { title: "Abstraction Explained", channel: "Kunal Kushwaha", videos: 4, thumbGradient: "from-primary to-blue-500", emoji: "🌫️" },
+      ],
+      "SOLID Principles": [
+        { title: "SOLID Principles", channel: "ByteByteGo", videos: 6, thumbGradient: "from-primary to-blue-500", emoji: "🧭" },
+        { title: "SOLID with Examples", channel: "Fireship", videos: 5, thumbGradient: "from-accent to-orange-500", emoji: "🧱" },
+      ],
+    },
   },
-];
+  "Operating Systems": {
+    subtopics: ["All", "Processes & Threads", "CPU Scheduling", "Memory Management", "Deadlocks", "File Systems"],
+    playlists: {
+      All: [
+        { title: "Complete OS Course", channel: "Gate Smashers", videos: 100, thumbGradient: "from-primary to-blue-500", emoji: "🖥️" },
+        { title: "Operating Systems Full Tutorial", channel: "Knowledge Gate", videos: 80, thumbGradient: "from-accent to-orange-500", emoji: "⚙️" },
+        { title: "OS Concepts", channel: "Neso Academy", videos: 60, thumbGradient: "from-emerald-500 to-teal-500", emoji: "📘" },
+      ],
+      "Processes & Threads": [
+        { title: "Processes vs Threads", channel: "Gate Smashers", videos: 10, thumbGradient: "from-primary to-blue-500", emoji: "🧵" },
+        { title: "Multithreading Explained", channel: "Neso Academy", videos: 8, thumbGradient: "from-accent to-orange-500", emoji: "🪡" },
+      ],
+      "CPU Scheduling": [
+        { title: "CPU Scheduling Algorithms", channel: "Gate Smashers", videos: 12, thumbGradient: "from-primary to-blue-500", emoji: "⏱️" },
+      ],
+      "Memory Management": [
+        { title: "Paging & Segmentation", channel: "Knowledge Gate", videos: 14, thumbGradient: "from-primary to-blue-500", emoji: "🧠" },
+        { title: "Virtual Memory", channel: "Neso Academy", videos: 10, thumbGradient: "from-accent to-orange-500", emoji: "💽" },
+      ],
+      Deadlocks: [
+        { title: "Deadlocks in OS", channel: "Gate Smashers", videos: 8, thumbGradient: "from-primary to-blue-500", emoji: "🔐" },
+      ],
+      "File Systems": [
+        { title: "File Systems Explained", channel: "Neso Academy", videos: 9, thumbGradient: "from-primary to-blue-500", emoji: "📁" },
+      ],
+    },
+  },
+  "Computer Networks": {
+    subtopics: ["All", "OSI Model", "TCP/IP", "Routing", "DNS & HTTP", "Network Security"],
+    playlists: {
+      All: [
+        { title: "Complete CN Course", channel: "Gate Smashers", videos: 95, thumbGradient: "from-primary to-blue-500", emoji: "🌐" },
+        { title: "Networking Fundamentals", channel: "PowerCert", videos: 40, thumbGradient: "from-accent to-orange-500", emoji: "📡" },
+      ],
+      "OSI Model": [
+        { title: "OSI Model Explained", channel: "PowerCert", videos: 7, thumbGradient: "from-primary to-blue-500", emoji: "📶" },
+      ],
+      "TCP/IP": [
+        { title: "TCP/IP Deep Dive", channel: "Hussein Nasser", videos: 12, thumbGradient: "from-primary to-blue-500", emoji: "🔌" },
+      ],
+      Routing: [
+        { title: "Routing Protocols", channel: "Gate Smashers", videos: 10, thumbGradient: "from-primary to-blue-500", emoji: "🛰️" },
+      ],
+      "DNS & HTTP": [
+        { title: "How DNS Works", channel: "ByteByteGo", videos: 6, thumbGradient: "from-primary to-blue-500", emoji: "🌍" },
+        { title: "HTTP/HTTPS Explained", channel: "Fireship", videos: 5, thumbGradient: "from-accent to-orange-500", emoji: "🔗" },
+      ],
+      "Network Security": [
+        { title: "Network Security Basics", channel: "Neso Academy", videos: 12, thumbGradient: "from-primary to-blue-500", emoji: "🛡️" },
+      ],
+    },
+  },
+};
 
 function SearchTopic() {
   const [query, setQuery] = useState("");
-  const [activeTopic, setActiveTopic] = useState<string | null>(null);
+  const [activeSubject, setActiveSubject] = useState<string | null>(null);
+  const [activeSubtopic, setActiveSubtopic] = useState<string>("All");
+
+  const resolveSubject = (raw: string): string | null => {
+    const q = raw.trim().toLowerCase();
+    if (!q) return null;
+    const match = subjects.find(
+      (s) => s.toLowerCase() === q || s.toLowerCase().includes(q) || q.includes(s.toLowerCase()),
+    );
+    return match ?? null;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) setActiveTopic(query.trim());
+    const subject = resolveSubject(query);
+    if (subject) {
+      setActiveSubject(subject);
+      setActiveSubtopic("All");
+    }
   };
 
-  const pickTopic = (t: string) => {
-    setQuery(t);
-    setActiveTopic(t);
+  const pickSubject = (s: string) => {
+    setQuery(s);
+    setActiveSubject(s);
+    setActiveSubtopic("All");
   };
+
+  const clearAll = () => {
+    setActiveSubject(null);
+    setActiveSubtopic("All");
+    setQuery("");
+  };
+
+  const currentSubject = activeSubject ? subjectData[activeSubject] : null;
+  const currentPlaylists = currentSubject
+    ? currentSubject.playlists[activeSubtopic] ?? currentSubject.playlists["All"]
+    : [];
 
   return (
     <section id="courses">
       <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Search a topic</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Find curated YouTube playlists for any CS topic.</p>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Explore a subject</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Pick a subject, drill into sub-topics, and get curated playlists with assignments.
+        </p>
       </div>
 
       <form onSubmit={handleSearch} className="relative">
@@ -284,7 +456,7 @@ function SearchTopic() {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search a CS topic (e.g. Binary Search Trees, React Hooks, Dynamic Programming)..."
+          placeholder="Search a subject (e.g. DSA, DBMS, System Design)..."
           className="h-14 rounded-full border-border bg-card pl-14 pr-32 text-base shadow-soft"
         />
         <Button
@@ -296,37 +468,59 @@ function SearchTopic() {
       </form>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Trending:</span>
-        {trendingTopics.map((t) => (
+        <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Subjects:
+        </span>
+        {subjects.map((s) => (
           <button
-            key={t}
-            onClick={() => pickTopic(t)}
+            key={s}
+            onClick={() => pickSubject(s)}
             className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
-              activeTopic === t
+              activeSubject === s
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-card text-foreground hover:border-primary hover:text-primary"
             }`}
           >
-            {t}
+            {s}
           </button>
         ))}
       </div>
 
-      {activeTopic && (
+      {currentSubject && (
         <div className="mt-8">
-          <div className="mb-5 flex items-end justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-xl font-bold text-foreground">
-              Playlists for <span className="text-primary">{activeTopic}</span>
+              <span className="text-primary">{activeSubject}</span>
+              {activeSubtopic !== "All" && (
+                <span className="text-foreground"> · {activeSubtopic}</span>
+              )}
             </h3>
             <button
-              onClick={() => { setActiveTopic(null); setQuery(""); }}
+              onClick={clearAll}
               className="text-sm font-semibold text-muted-foreground hover:text-foreground"
             >
               Clear
             </button>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {samplePlaylists.map((p) => (
+
+          <div className="mb-6 flex flex-wrap gap-2">
+            {currentSubject.subtopics.map((t) => (
+              <button
+                key={t}
+                onClick={() => setActiveSubtopic(t)}
+                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
+                  activeSubtopic === t
+                    ? "border-accent bg-accent text-accent-foreground"
+                    : "border-border bg-card text-foreground hover:border-accent hover:text-accent"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {currentPlaylists.map((p) => (
               <div
                 key={p.title}
                 className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1"
@@ -343,9 +537,17 @@ function SearchTopic() {
                 <div className="p-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{p.channel}</p>
                   <h4 className="mt-1.5 font-display text-base font-bold text-foreground line-clamp-2">{p.title}</h4>
-                  <Button className="mt-4 h-10 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
-                    <Play className="mr-1.5 h-3.5 w-3.5" /> Start Learning
-                  </Button>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <Button className="h-10 flex-1 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
+                      <Play className="mr-1.5 h-3.5 w-3.5" /> Watch Videos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-10 flex-1 rounded-full border-accent text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
+                    >
+                      📝 Solve Assignments
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
