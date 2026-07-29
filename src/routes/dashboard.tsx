@@ -26,6 +26,11 @@ import {
   Newspaper,
   Briefcase,
   Lightbulb,
+  Lock,
+  Trophy,
+  Target,
+  Medal,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
