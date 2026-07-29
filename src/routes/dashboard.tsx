@@ -549,6 +549,31 @@ function SearchTopic() {
   );
 }
 
+function playChime() {
+  try {
+    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    [880, 1108.73, 1318.51].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const start = now + i * 0.18;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.1);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 1.2);
+    });
+    setTimeout(() => ctx.close(), 2200);
+  } catch {
+    /* audio unavailable */
+  }
+}
+
 function StudyTimer() {
   const SESSION = 25 * 60;
   const [seconds, setSeconds] = useState(SESSION);
@@ -565,6 +590,23 @@ function StudyTimer() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [running]);
+
+  useEffect(() => {
+    if (seconds !== 0 || !running) return;
+    setRunning(false);
+    playChime();
+    toast("Session complete! Take a break 🎉", {
+      description: "Nice focus streak. Stretch, hydrate, then go again.",
+      duration: 10000,
+      action: {
+        label: "New session",
+        onClick: () => {
+          setSeconds(SESSION);
+          setRunning(true);
+        },
+      },
+    });
+  }, [seconds, running, SESSION]);
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
@@ -593,7 +635,10 @@ function StudyTimer() {
 
       <div className="flex gap-2">
         <Button
-          onClick={() => setRunning((r) => !r)}
+          onClick={() => {
+            if (seconds === 0) setSeconds(SESSION);
+            setRunning((r) => !r);
+          }}
           className="h-11 flex-1 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5"
         >
           {running ? <><Pause className="mr-1.5 h-4 w-4" /> Pause</> : <><Play className="mr-1.5 h-4 w-4" /> Start</>}
@@ -614,6 +659,7 @@ function StudyTimer() {
     </div>
   );
 }
+
 
 const breakGames = [
   { name: "Word Scramble", desc: "Unscramble letters to form real words against the clock.", icon: Puzzle, tint: "from-primary to-blue-500" },
