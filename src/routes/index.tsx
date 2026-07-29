@@ -278,9 +278,9 @@ function Stats() {
 }
 
 const testimonials = [
-  { name: "Amara O.", role: "Biology major", quote: "The AI feedback caught mistakes my professor didn't even mention. My essays leveled up in two weeks." },
-  { name: "Kenji T.", role: "High school senior", quote: "Badges sound silly until you're chasing them. I studied more this month than the whole last semester." },
-  { name: "Priya S.", role: "CS undergrad", quote: "Progress tracking finally shows me what I actually know vs. what I'm faking. Game-changer." },
+  { name: "Rohan M.", role: "CS undergrad", quote: "The AI feedback caught bugs in my code logic my TA didn't even mention. My DSA submissions improved fast." },
+  { name: "Ananya K.", role: "B.Tech CSE student", quote: "Badges sound silly until you're chasing them. I solved more problems this month than the whole last semester." },
+  { name: "Dev P.", role: "Final year CS student", quote: "Finding good DSA playlists used to take forever. Now I just search the topic and start solving." },
 ];
 
 function Testimonials() {

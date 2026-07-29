@@ -537,13 +537,13 @@ function SearchTopic() {
                 <div className="p-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{p.channel}</p>
                   <h4 className="mt-1.5 font-display text-base font-bold text-foreground line-clamp-2">{p.title}</h4>
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                    <Button className="h-10 flex-1 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
+                  <div className="mt-4 flex flex-col gap-2">
+                    <Button className="h-10 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
                       <Play className="mr-1.5 h-3.5 w-3.5" /> Watch Videos
                     </Button>
                     <Button
                       variant="outline"
-                      className="h-10 flex-1 rounded-full border-accent text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
+                      className="h-10 w-full rounded-full border-accent text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
                     >
                       📝 Solve Assignments
                     </Button>
