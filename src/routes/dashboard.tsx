@@ -26,7 +26,13 @@ import {
   Newspaper,
   Briefcase,
   Lightbulb,
+  Lock,
+  Trophy,
+  Target,
+  Medal,
+  Sparkles,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -95,17 +101,8 @@ function DashboardNav() {
           ))}
         </div>
 
-        <div className="ml-auto hidden max-w-xs flex-1 md:block">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search courses, assignments…"
-              className="h-10 rounded-full border-border bg-muted/60 pl-9 text-sm"
-            />
-          </div>
-        </div>
+        <div className="ml-auto flex items-center gap-3">
 
-        <div className="ml-auto flex items-center gap-3 md:ml-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-full border border-border bg-card p-1 pr-3 transition-colors hover:bg-muted">
@@ -558,6 +555,31 @@ function SearchTopic() {
   );
 }
 
+function playChime() {
+  try {
+    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    [880, 1108.73, 1318.51].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const start = now + i * 0.18;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.1);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 1.2);
+    });
+    setTimeout(() => ctx.close(), 2200);
+  } catch {
+    /* audio unavailable */
+  }
+}
+
 function StudyTimer() {
   const SESSION = 25 * 60;
   const [seconds, setSeconds] = useState(SESSION);
@@ -574,6 +596,23 @@ function StudyTimer() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [running]);
+
+  useEffect(() => {
+    if (seconds !== 0 || !running) return;
+    setRunning(false);
+    playChime();
+    toast("Session complete! Take a break 🎉", {
+      description: "Nice focus streak. Stretch, hydrate, then go again.",
+      duration: 10000,
+      action: {
+        label: "New session",
+        onClick: () => {
+          setSeconds(SESSION);
+          setRunning(true);
+        },
+      },
+    });
+  }, [seconds, running, SESSION]);
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
@@ -602,7 +641,10 @@ function StudyTimer() {
 
       <div className="flex gap-2">
         <Button
-          onClick={() => setRunning((r) => !r)}
+          onClick={() => {
+            if (seconds === 0) setSeconds(SESSION);
+            setRunning((r) => !r);
+          }}
           className="h-11 flex-1 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5"
         >
           {running ? <><Pause className="mr-1.5 h-4 w-4" /> Pause</> : <><Play className="mr-1.5 h-4 w-4" /> Start</>}
@@ -623,6 +665,7 @@ function StudyTimer() {
     </div>
   );
 }
+
 
 const breakGames = [
   { name: "Word Scramble", desc: "Unscramble letters to form real words against the clock.", icon: Puzzle, tint: "from-primary to-blue-500" },
@@ -662,33 +705,103 @@ function TakeABreak() {
   );
 }
 
+const SHIELD_CLIP =
+  "polygon(50% 0%, 100% 14%, 100% 58%, 50% 100%, 0% 58%, 0% 14%)";
+
+const badgeList = [
+  { name: "First Steps", desc: "Complete your first lesson", icon: Star, earned: true, tint: "from-primary to-blue-500" },
+  { name: "Streak Starter", desc: "Study 3 days in a row", icon: Flame, earned: true, tint: "from-accent to-orange-500" },
+  { name: "Sharp Shooter", desc: "Score 90%+ on an assignment", icon: Target, earned: false, tint: "" },
+  { name: "Marathoner", desc: "Log 10 hours of focus time", icon: Medal, earned: false, tint: "" },
+  { name: "Course Champ", desc: "Finish a full course", icon: Trophy, earned: false, tint: "" },
+];
+
+function BadgeShield({ badge }: { badge: (typeof badgeList)[number] }) {
+  const Icon = badge.earned ? badge.icon : Lock;
+  return (
+    <div className="group flex flex-col items-center text-center">
+      <div
+        className={`relative h-24 w-20 transition-transform duration-300 ease-out ${
+          badge.earned
+            ? "group-hover:-translate-y-1 group-hover:scale-110 motion-safe:group-hover:animate-scale-in"
+            : "group-hover:scale-105"
+        }`}
+      >
+        {/* outer shield frame */}
+        <div
+          className={`absolute inset-0 ${badge.earned ? "bg-gradient-to-br " + badge.tint : "bg-border"}`}
+          style={{ clipPath: SHIELD_CLIP }}
+        />
+        {/* inner face */}
+        <div
+          className={`absolute inset-[3px] ${
+            badge.earned ? "bg-gradient-to-br " + badge.tint : "bg-muted"
+          }`}
+          style={{ clipPath: SHIELD_CLIP }}
+        />
+        {/* shine */}
+        {badge.earned && (
+          <div
+            className="absolute inset-[3px] bg-gradient-to-br from-white/60 via-white/5 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+            style={{ clipPath: SHIELD_CLIP }}
+          />
+        )}
+        {/* glow */}
+        {badge.earned && (
+          <div
+            className={`absolute -inset-1 -z-10 rounded-full bg-gradient-to-br ${badge.tint} opacity-30 blur-lg transition-opacity duration-300 group-hover:opacity-70`}
+          />
+        )}
+        <div className="absolute inset-0 grid place-items-center pb-3">
+          <Icon
+            className={`h-7 w-7 ${badge.earned ? "text-white drop-shadow" : "text-muted-foreground"}`}
+          />
+        </div>
+      </div>
+      <p className={`mt-3 font-display text-sm font-bold ${badge.earned ? "text-foreground" : "text-muted-foreground"}`}>
+        {badge.name}
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{badge.desc}</p>
+    </div>
+  );
+}
+
 function BadgesEmpty() {
+  const earned = badgeList.filter((b) => b.earned).length;
   return (
     <section>
       <div className="mb-6 flex items-end justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Badges & achievements</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Your first goal is within reach.</p>
-        </div>
-      </div>
-      <div className="flex flex-col items-center gap-5 rounded-2xl border border-border bg-card p-8 text-center shadow-soft sm:flex-row sm:text-left">
-        <div className="grid h-20 w-20 shrink-0 place-items-center rounded-3xl bg-gradient-to-br from-primary to-blue-500 text-white shadow-soft">
-          <Star className="h-9 w-9" />
-        </div>
-        <div className="flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-accent">Upcoming goal</p>
-          <h3 className="mt-1 font-display text-lg font-bold text-foreground">First Steps</h3>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Earn your first badge by completing your first lesson!
+          <p className="mt-1 text-sm text-muted-foreground">
+            {earned} of {badgeList.length} unlocked — hover a badge to see it shine.
           </p>
         </div>
-        <Button className="rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
-          Start a lesson
-        </Button>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-8 shadow-soft">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
+          {badgeList.map((b) => (
+            <BadgeShield key={b.name} badge={b} />
+          ))}
+        </div>
+        <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl bg-muted/50 p-5 text-center sm:flex-row sm:text-left">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-blue-500 text-white">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-accent">Next goal</p>
+            <h3 className="font-display text-base font-bold text-foreground">Sharp Shooter</h3>
+            <p className="text-sm text-muted-foreground">Score 90%+ on an assignment to unlock this shield.</p>
+          </div>
+          <Button className="rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
+            Start a lesson
+          </Button>
+        </div>
       </div>
     </section>
   );
 }
+
 
 function ProgressEmpty() {
   return (
