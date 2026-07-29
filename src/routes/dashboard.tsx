@@ -95,17 +95,8 @@ function DashboardNav() {
           ))}
         </div>
 
-        <div className="ml-auto hidden max-w-xs flex-1 md:block">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search courses, assignments…"
-              className="h-10 rounded-full border-border bg-muted/60 pl-9 text-sm"
-            />
-          </div>
-        </div>
+        <div className="ml-auto flex items-center gap-3">
 
-        <div className="ml-auto flex items-center gap-3 md:ml-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-full border border-border bg-card p-1 pr-3 transition-colors hover:bg-muted">
