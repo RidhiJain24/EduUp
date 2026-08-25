@@ -1,74 +1,37 @@
-# EduUp Ascent
+# EduUp
 
-Create a modern, clean landing page for an educational platform called 
+EduUp is a learning platform built for CSE (Computer Science) students. 
+Instead of spending time searching YouTube for good content, students 
+search a topic (e.g. Data Structures, DBMS, System Design) and get 
+curated playlists from top educators — pick one, watch the videos, 
+then solve AI-checked practice questions with instant feedback and 
+improvement tips.
 
-"EduUp" targeted at students who want to learn courses, 
+## Features
 
-complete assignments with AI-powered feedback, track their progress, and 
+- 🔍 **Topic-based search** — find curated YouTube playlists by subject 
+  and sub-topic, instead of searching YouTube manually
+- 🤖 **AI-powered assignment review** — submit answers and get instant, 
+  detailed feedback and explanations
+- 📊 **Progress tracking** — dashboard showing streaks, courses in 
+  progress, and weekly study activity
+- 🏆 **Badges & achievements** — unlock badge/shield-style rewards for 
+  milestones and consistency
+- ⏱️ **Study timer** — Pomodoro-style sessions with water break reminders
+- 🎮 **Break-time games** — quick educational games to refresh between 
+  study sessions
+- 📰 **Study news** — stay updated on tech news, internships, and 
+  career opportunities
 
-earn achievement badges.
+## Tech Stack
 
-Design style: modern, minimal, professional but friendly — use a color 
+**Frontend:** React, TypeScript, TanStack Router, Vite  
+**Backend:** Node.js, Express  
+**Database:** PostgreSQL (Neon) with Prisma ORM  
+**Auth:** JWT-based authentication with bcrypt password hashing
 
-palette of [e.g. deep blue + white + a warm accent like orange/teal]. 
+## Status
 
-Rounded corners, soft shadows, plenty of whitespace.
-
-Sections needed (in order):
-
-1. Navbar — logo on left, links (Features, How it Works, Pricing, Login/Signup 
-
-   button) on right, sticky on scroll
-
-2. Hero section — bold headline about learning with AI-powered feedback, 
-
-   subheadline, a primary CTA button ("Get Started Free") and secondary 
-
-   CTA ("Watch Demo"), with an illustration or mockup image on the right
-
-3. Features section — 4-6 feature cards with icons: AI Assignment Review, 
-
-   Progress Tracking, Achievement Badges, Study Timer & Breaks, Educational 
-
-   Games, Career Guidance Feed
-
-4. How It Works — 3-step process (Sign up → Pick a course → Learn, submit, 
-
-   get AI feedback, earn badges) shown horizontally with icons/numbers
-
-5. Stats/social proof bar — placeholder numbers (e.g. "10,000+ students", 
-
-   "500+ courses", "95% satisfaction")
-
-6. Testimonials section — 3 testimonial cards with placeholder student quotes
-
-7. CTA section — final call to action banner before footer
-
-8. Footer — logo, quick links, social icons, copyright
-
-Make it fully responsive for mobile. Use smooth hover animations on 
-
-buttons and cards. Keep the layout similar to modern SaaS landing pages 
-
-(like Linear, Notion, or Duolingo's marketing site) but original design.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/c1b7871b-33a2-48f5-a37f-323b43f61dde).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+🚧 In active development — currently built: landing page, auth (signup/
+login), student dashboard, and backend auth API. Topic search, AI 
+review, and badge logic in progress.
