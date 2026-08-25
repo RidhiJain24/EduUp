@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { fetchAPI } from "@/lib/api";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -37,6 +39,36 @@ function GoogleIcon() {
 }
 
 function SignupPage() {
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [terms, setTerms] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!terms) {
+      setError("Please agree to the Terms & Privacy Policy");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const data = await fetchAPI("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ name, email, password }),
+      });
+      localStorage.setItem("token", data.token);
+      navigate({ to: "/dashboard" });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
@@ -55,21 +87,26 @@ function SignupPage() {
               Free forever. No credit card required.
             </p>
 
-            <form className="mt-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+            <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+              {error && (
+                <p className="rounded-xl bg-destructive/10 p-3 text-sm font-medium text-destructive">
+                  {error}
+                </p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">Name</Label>
-                <Input id="name" type="text" placeholder="Alex Johnson" className="h-11 rounded-xl" />
+                <Input id="name" type="text" placeholder="Alex Johnson" className="h-11 rounded-xl" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                <Input id="email" type="email" placeholder="you@school.edu" className="h-11 rounded-xl" />
+                <Input id="email" type="email" placeholder="you@school.edu" className="h-11 rounded-xl" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                <Input id="password" type="password" placeholder="At least 8 characters" className="h-11 rounded-xl" />
+                <Input id="password" type="password" placeholder="At least 8 characters" className="h-11 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <div className="flex items-start gap-3 pt-1">
-                <Checkbox id="terms" className="mt-0.5 h-5 w-5 rounded-[4px] border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground" />
+                <Checkbox id="terms" checked={terms} onCheckedChange={(c) => setTerms(c as boolean)} className="mt-0.5 h-5 w-5 rounded-[4px] border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground" />
                 <Label htmlFor="terms" className="text-sm font-normal leading-relaxed text-muted-foreground">
                   I agree to the{" "}
                   <a href="#" className="font-medium text-primary hover:underline">Terms</a>
@@ -77,8 +114,8 @@ function SignupPage() {
                   <a href="#" className="font-medium text-primary hover:underline">Privacy Policy</a>
                 </Label>
               </div>
-              <Button type="submit" className="h-11 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-glow">
-                Sign up
+              <Button type="submit" disabled={loading} className="h-11 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-glow">
+                {loading ? "Signing up..." : "Sign up"}
               </Button>
             </form>
 

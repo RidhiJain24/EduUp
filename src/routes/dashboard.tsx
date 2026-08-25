@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   GraduationCap,
@@ -47,6 +47,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/dashboard")({
+  beforeLoad: () => {
+    if (!localStorage.getItem("token")) {
+      throw redirect({ to: "/login" });
+    }
+  },
   head: () => ({
     meta: [
       { title: "Dashboard — EduUp" },
@@ -58,7 +63,7 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-const STUDENT_NAME = "Alex";
+import { fetchAPI } from "@/lib/api";
 
 function Logo() {
   return (
@@ -71,7 +76,7 @@ function Logo() {
   );
 }
 
-function DashboardNav() {
+function DashboardNav({ user }: { user: { name: string; email: string } }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navLinks = [
     { label: "Dashboard", href: "/dashboard", active: true },
@@ -108,17 +113,17 @@ function DashboardNav() {
               <button className="flex items-center gap-2 rounded-full border border-border bg-card p-1 pr-3 transition-colors hover:bg-muted">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
-                    {STUDENT_NAME[0]}
+                    {user.name?.[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden text-sm font-medium text-foreground sm:inline">{STUDENT_NAME}</span>
+                <span className="hidden text-sm font-medium text-foreground sm:inline">{user.name}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-2xl">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{STUDENT_NAME} Johnson</span>
-                  <span className="text-xs font-normal text-muted-foreground">alex@school.edu</span>
+                  <span className="text-sm font-semibold">{user.name}</span>
+                  <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -126,7 +131,12 @@ function DashboardNav() {
               <DropdownMenuItem className="gap-2"><Settings className="h-4 w-4" /> Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="gap-2 text-destructive focus:text-destructive">
-                <Link to="/login"><LogOut className="h-4 w-4" /> Log out</Link>
+                <button className="w-full" onClick={() => {
+                  localStorage.removeItem("token");
+                  window.location.href = "/login";
+                }}>
+                  <LogOut className="h-4 w-4" /> Log out
+                </button>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -165,7 +175,7 @@ function DashboardNav() {
   );
 }
 
-function WelcomeHeader() {
+function WelcomeHeader({ user }: { user: { name: string } }) {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -176,7 +186,7 @@ function WelcomeHeader() {
       <div>
         <p className="text-sm font-medium text-muted-foreground">{today}</p>
         <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          Welcome to EduUp, {STUDENT_NAME}! 🎉
+          Welcome to EduUp, {user.name}! 🎉
         </h1>
         <p className="mt-3 max-w-xl text-base text-muted-foreground">
           Let's start your learning journey today.
@@ -913,15 +923,40 @@ function StudyNews() {
 }
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAPI('/auth/me')
+      .then(setUser)
+      .catch(() => {
+        localStorage.removeItem('token');
+        navigate({ to: "/login" });
+      })
+      .finally(() => setLoading(false));
+  }, [navigate]);
+
+  if (loading || !user) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm font-medium text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-40 h-[300px] w-[300px] rounded-full bg-accent/20 blur-3xl" />
 
       <div className="relative z-10">
-        <DashboardNav />
+        <DashboardNav user={user} />
         <main className="mx-auto max-w-7xl space-y-16 px-4 py-10 sm:space-y-20 sm:px-6 sm:py-14">
-          <WelcomeHeader />
+          <WelcomeHeader user={user} />
           <QuickStats />
 
           <div className="grid gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">

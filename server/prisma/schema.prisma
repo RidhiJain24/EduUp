@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  streak       Int          @default(0)
+  createdAt    DateTime     @default(now())
+  submissions  Submission[]
+  userBadges   UserBadge[]
+}
+
+model Subject {
+  id        String     @id @default(uuid())
+  name      String
+  subtopics Subtopic[]
+}
+
+model Subtopic {
+  id        String     @id @default(uuid())
+  subjectId String
+  subject   Subject    @relation(fields: [subjectId], references: [id])
+  name      String
+  playlists Playlist[]
+  questions Question[]
+}
+
+model Playlist {
+  id          String   @id @default(uuid())
+  subtopicId  String
+  subtopic    Subtopic @relation(fields: [subtopicId], references: [id])
+  channelName String
+  title       String
+  youtubeUrl  String
+  videoCount  Int
+}
+
+model Question {
+  id           String       @id @default(uuid())
+  subtopicId   String
+  subtopic     Subtopic     @relation(fields: [subtopicId], references: [id])
+  questionText String
+  difficulty   String
+  submissions  Submission[]
+}
+
+model Submission {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id])
+  answerText  String
+  aiScore     Int?
+  aiFeedback  String?
+  submittedAt DateTime @default(now())
+}
+
+model Badge {
+  id         String      @id @default(uuid())
+  name       String
+  criteria   String
+  iconType   String
+  userBadges UserBadge[]
+}
+
+model UserBadge {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  badgeId    String
+  badge      Badge    @relation(fields: [badgeId], references: [id])
+  unlockedAt DateTime @default(now())
+}

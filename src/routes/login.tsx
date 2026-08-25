@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchAPI } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -53,6 +55,29 @@ function AuthBackground({ children }: { children: React.ReactNode }) {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const data = await fetchAPI("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      localStorage.setItem("token", data.token);
+      navigate({ to: "/dashboard" });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthBackground>
       <div className="w-full max-w-md">
@@ -66,14 +91,16 @@ function LoginPage() {
 
           <form
             className="mt-8 space-y-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate({ to: "/dashboard" });
-            }}
+            onSubmit={handleSubmit}
           >
+            {error && (
+              <p className="rounded-xl bg-destructive/10 p-3 text-sm font-medium text-destructive">
+                {error}
+              </p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-              <Input id="email" type="email" placeholder="you@school.edu" className="h-11 rounded-xl" />
+              <Input id="email" type="email" placeholder="you@school.edu" className="h-11 rounded-xl" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -82,10 +109,10 @@ function LoginPage() {
                   Forgot password?
                 </a>
               </div>
-              <Input id="password" type="password" placeholder="••••••••" className="h-11 rounded-xl" />
+              <Input id="password" type="password" placeholder="••••••••" className="h-11 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
-            <Button type="submit" className="h-11 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-glow">
-              Log in
+            <Button type="submit" disabled={loading} className="h-11 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-glow">
+              {loading ? "Logging in..." : "Log in"}
             </Button>
           </form>
 
