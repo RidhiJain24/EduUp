@@ -282,7 +282,7 @@ const subjectData: Record<
     },
   },
   DBMS: {
-    subtopics: ["All", "Normalization", "SQL Queries", "Transactions & Concurrency", "Indexing"],
+    subtopics: ["All", "Normalization", "SQL Queries", "Transactions & Concurrency", "Indexing", "ER Diagrams", "Joins", "Database Design"],
     playlists: {
       All: [
         { title: "Complete DBMS Course", channel: "Gate Smashers", videos: 90, thumbGradient: "from-primary to-blue-500", emoji: "🗄️" },
