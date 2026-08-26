@@ -389,7 +389,7 @@ const subjectData: Record<
     },
   },
   "Computer Networks": {
-    subtopics: ["All", "OSI Model", "TCP/IP", "Routing", "DNS & HTTP", "Network Security"],
+    subtopics: ["All", "OSI Model", "TCP/IP", "Routing", "DNS", "HTTP/HTTPS", "Network Security", "Sockets"],
     playlists: {
       All: [
         { title: "Complete CN Course", channel: "Gate Smashers", videos: 95, thumbGradient: "from-primary to-blue-500", emoji: "🌐" },
