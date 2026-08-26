@@ -220,7 +220,18 @@ function QuickStats() {
   );
 }
 
-const subjects = ["DSA", "DBMS", "System Design", "OOP", "Operating Systems", "Computer Networks"];
+const subjects = [
+  "DSA",
+  "DBMS",
+  "System Design",
+  "OOP",
+  "Operating Systems",
+  "Computer Networks",
+  "Web Development",
+  "Aptitude & Interview Prep",
+  "Machine Learning",
+  "Computer Architecture",
+];
 
 type Playlist = {
   title: string;
@@ -232,7 +243,7 @@ type Playlist = {
 
 const subjectData: Record<
   string,
-  { subtopics: string[]; playlists: Record<string, Playlist[]> }
+  { subtopics: string[]; playlists?: Record<string, Playlist[]> }
 > = {
   DSA: {
     subtopics: ["All", "Recursion", "Binary Search Trees", "Linked Lists", "Graphs", "Sorting Algorithms"],
