@@ -582,20 +582,24 @@ function SearchTopic() {
             </button>
           </div>
 
-          <div className="mb-6 flex flex-wrap gap-2">
-            {currentSubject.subtopics.map((t) => (
-              <button
-                key={t}
-                onClick={() => setActiveSubtopic(t)}
-                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
-                  activeSubtopic === t
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-border bg-card text-foreground hover:border-accent hover:text-accent"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+          <div className="relative mb-6">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {currentSubject.subtopics.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setActiveSubtopic(t)}
+                  className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
+                    activeSubtopic === t
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border bg-card text-foreground hover:border-accent hover:text-accent"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
           </div>
 
           {loading ? (
