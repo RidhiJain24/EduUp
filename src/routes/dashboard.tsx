@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   GraduationCap,
@@ -47,11 +47,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/dashboard")({
-  beforeLoad: () => {
-    if (!localStorage.getItem("token")) {
-      throw redirect({ to: "/login" });
-    }
-  },
   head: () => ({
     meta: [
       { title: "Dashboard — EduUp" },
