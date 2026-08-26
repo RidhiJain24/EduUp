@@ -309,7 +309,7 @@ const subjectData: Record<
     },
   },
   "System Design": {
-    subtopics: ["All", "Load Balancing", "Caching", "Database Sharding", "Microservices"],
+    subtopics: ["All", "Load Balancing", "Caching", "Database Sharding", "Microservices", "API Design", "Scalability", "CAP Theorem"],
     playlists: {
       All: [
         { title: "System Design Primer", channel: "Gaurav Sen", videos: 60, thumbGradient: "from-primary to-blue-500", emoji: "🏗️" },
