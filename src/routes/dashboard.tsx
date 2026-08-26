@@ -413,6 +413,18 @@ const subjectData: Record<
       ],
     },
   },
+  "Web Development": {
+    subtopics: ["All", "HTML & CSS", "JavaScript", "React", "Node.js & Express", "REST APIs", "Responsive Design"],
+  },
+  "Aptitude & Interview Prep": {
+    subtopics: ["All", "Quantitative Aptitude", "Logical Reasoning", "Verbal Ability", "HR Interview Prep", "Technical Interview Prep"],
+  },
+  "Machine Learning": {
+    subtopics: ["All", "Linear Regression", "Classification", "Neural Networks", "Model Evaluation", "Data Preprocessing"],
+  },
+  "Computer Architecture": {
+    subtopics: ["All", "Number Systems", "Logic Gates", "CPU Architecture", "Memory Hierarchy", "Pipelining"],
+  },
 };
 
 type ApiPlaylist = {
