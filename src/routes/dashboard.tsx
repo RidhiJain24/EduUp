@@ -246,7 +246,7 @@ const subjectData: Record<
   { subtopics: string[]; playlists?: Record<string, Playlist[]> }
 > = {
   DSA: {
-    subtopics: ["All", "Recursion", "Binary Search Trees", "Linked Lists", "Graphs", "Sorting Algorithms"],
+    subtopics: ["All", "Arrays", "Strings", "Recursion", "Backtracking", "Linked Lists", "Stacks & Queues", "Binary Trees", "Binary Search Trees", "Heaps", "Hashing", "Graphs", "Sorting Algorithms", "Searching Algorithms", "Dynamic Programming", "Greedy Algorithms", "Tries", "Bit Manipulation", "Sliding Window"],
     playlists: {
       All: [
         { title: "Complete DSA Bootcamp", channel: "Abdul Bari", videos: 82, thumbGradient: "from-primary to-blue-500", emoji: "🧩" },
