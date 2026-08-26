@@ -409,10 +409,25 @@ const subjectData: Record<
   },
 };
 
+type ApiPlaylist = {
+  id?: string;
+  playlistId?: string;
+  title: string;
+  channelName?: string;
+  channelTitle?: string;
+  thumbnail?: string;
+  thumbnailUrl?: string;
+  youtubeUrl?: string;
+  url?: string;
+};
+
 function SearchTopic() {
   const [query, setQuery] = useState("");
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
   const [activeSubtopic, setActiveSubtopic] = useState<string>("All");
+  const [results, setResults] = useState<ApiPlaylist[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const resolveSubject = (raw: string): string | null => {
     const q = raw.trim().toLowerCase();
@@ -442,12 +457,47 @@ function SearchTopic() {
     setActiveSubject(null);
     setActiveSubtopic("All");
     setQuery("");
+    setResults([]);
+    setError(null);
   };
 
   const currentSubject = activeSubject ? subjectData[activeSubject] : null;
-  const currentPlaylists = currentSubject
-    ? currentSubject.playlists[activeSubtopic] ?? currentSubject.playlists["All"]
-    : [];
+
+  useEffect(() => {
+    if (!activeSubject) return;
+    const searchQuery = [activeSubject, activeSubtopic !== "All" ? activeSubtopic : ""]
+      .filter(Boolean)
+      .join(" ");
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetch(
+      `http://localhost:5000/api/playlists/search?query=${encodeURIComponent(searchQuery)}`,
+      { signal: controller.signal },
+    )
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
+      .then((data) => {
+        const list: ApiPlaylist[] = Array.isArray(data)
+          ? data
+          : (data?.playlists ?? data?.results ?? data?.data ?? []);
+        setResults(list);
+        if (!list.length) setError("Couldn't load playlists right now, try again.");
+      })
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        setResults([]);
+        setError("Couldn't load playlists right now, try again.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [activeSubject, activeSubtopic]);
 
   return (
     <section id="courses">
@@ -526,39 +576,90 @@ function SearchTopic() {
             ))}
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {currentPlaylists.map((p) => (
-              <div
-                key={p.title}
-                className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1"
-              >
-                <div className={`relative flex h-36 items-center justify-center bg-gradient-to-br ${p.thumbGradient} text-5xl`}>
-                  {p.emoji}
-                  <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white">
-                    <Youtube className="h-4 w-4" />
-                  </span>
-                  <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2 py-0.5 text-xs font-semibold text-white">
-                    {p.videos} videos
-                  </span>
-                </div>
-                <div className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{p.channel}</p>
-                  <h4 className="mt-1.5 font-display text-base font-bold text-foreground line-clamp-2">{p.title}</h4>
-                  <div className="mt-4 flex flex-col gap-2">
-                    <Button className="h-10 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
-                      <Play className="mr-1.5 h-3.5 w-3.5" /> Watch Videos
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-10 w-full rounded-full border-accent text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
-                    >
-                      📝 Solve Assignments
-                    </Button>
+          {loading ? (
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft"
+                >
+                  <div className="h-36 animate-pulse bg-muted" />
+                  <div className="space-y-3 p-5">
+                    <div className="h-3 w-24 animate-pulse rounded-full bg-muted" />
+                    <div className="h-4 w-full animate-pulse rounded-full bg-muted" />
+                    <div className="h-4 w-2/3 animate-pulse rounded-full bg-muted" />
+                    <div className="mt-4 h-10 w-full animate-pulse rounded-full bg-muted" />
+                    <div className="h-10 w-full animate-pulse rounded-full bg-muted" />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-soft">
+              <p className="text-sm font-semibold text-foreground">
+                Couldn't load playlists right now, try again.
+              </p>
+              <Button
+                onClick={() => setActiveSubtopic((t) => t)}
+                variant="outline"
+                className="mt-4 rounded-full border-primary text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {results.map((p, idx) => {
+                const url = p.youtubeUrl ?? p.url ?? "#";
+                const thumb = p.thumbnail ?? p.thumbnailUrl;
+                const channel = p.channelName ?? p.channelTitle ?? "YouTube";
+                return (
+                  <div
+                    key={p.id ?? p.playlistId ?? `${p.title}-${idx}`}
+                    className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1"
+                  >
+                    <div className="relative h-36 bg-gradient-to-br from-primary to-blue-500">
+                      {thumb && (
+                        <img
+                          src={thumb}
+                          alt={p.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                      <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white">
+                        <Youtube className="h-4 w-4" />
+                      </span>
+                    </div>
+                    <div className="p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {channel}
+                      </p>
+                      <h4 className="mt-1.5 font-display text-base font-bold text-foreground line-clamp-2">
+                        {p.title}
+                      </h4>
+                      <div className="mt-4 flex flex-col gap-2">
+                        <Button
+                          asChild
+                          className="h-10 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5"
+                        >
+                          <a href={url} target="_blank" rel="noopener noreferrer">
+                            <Play className="mr-1.5 h-3.5 w-3.5" /> Watch Videos
+                          </a>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-10 w-full rounded-full border-accent text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
+                        >
+                          📝 Solve Assignments
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </section>
