@@ -437,6 +437,7 @@ type ApiPlaylist = {
   thumbnailUrl?: string;
   youtubeUrl?: string;
   url?: string;
+  playlistUrl?: string;
 };
 
 function SearchTopic() {
@@ -518,7 +519,7 @@ function SearchTopic() {
   }, [activeSubject, activeSubtopic]);
 
   return (
-    <section id="courses">
+    <section id="courses" className="w-full min-w-0 max-w-full">
       <div className="mb-6">
         <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Explore a subject</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -542,8 +543,8 @@ function SearchTopic() {
         </Button>
       </form>
 
-      <div className="relative mt-5">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative mt-5 w-full min-w-0 max-w-full">
+        <div className="flex items-center gap-2 overflow-x-auto py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Subjects:
           </span>
@@ -561,12 +562,11 @@ function SearchTopic() {
             </button>
           ))}
         </div>
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
       </div>
 
       {currentSubject && (
-        <div className="mt-8">
+        <div className="mt-8 min-w-0 max-w-full">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-xl font-bold text-foreground">
               <span className="text-primary">{activeSubject}</span>
@@ -582,8 +582,8 @@ function SearchTopic() {
             </button>
           </div>
 
-          <div className="relative mb-6">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="relative mb-6 w-full min-w-0 max-w-full">
+            <div className="flex items-center gap-2 overflow-x-auto py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {currentSubject.subtopics.map((t) => (
                 <button
                   key={t}
@@ -598,12 +598,11 @@ function SearchTopic() {
                 </button>
               ))}
             </div>
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
           </div>
 
           {loading ? (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full min-w-0">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
@@ -634,9 +633,17 @@ function SearchTopic() {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full min-w-0">
               {results.map((p, idx) => {
-                const url = p.youtubeUrl ?? p.url ?? "#";
+                const url =
+                  p.playlistUrl ??
+                  p.youtubeUrl ??
+                  p.url ??
+                  (p.playlistId
+                    ? `https://www.youtube.com/playlist?list=${p.playlistId}`
+                    : p.id
+                      ? `https://www.youtube.com/playlist?list=${p.id}`
+                      : "#");
                 const thumb = p.thumbnail ?? p.thumbnailUrl;
                 const channel = p.channelName ?? p.channelTitle ?? "YouTube";
                 return (
@@ -1086,8 +1093,8 @@ function Dashboard() {
           <WelcomeHeader user={user} />
           <QuickStats />
 
-          <div className="grid gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">
-            <div className="space-y-16 sm:space-y-20">
+          <div className="grid min-w-0 gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">
+            <div className="min-w-0 space-y-16 sm:space-y-20">
               <SearchTopic />
             </div>
             <div className="space-y-6">
