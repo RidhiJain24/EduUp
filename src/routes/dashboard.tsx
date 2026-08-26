@@ -362,7 +362,7 @@ const subjectData: Record<
     },
   },
   "Operating Systems": {
-    subtopics: ["All", "Processes & Threads", "CPU Scheduling", "Memory Management", "Deadlocks", "File Systems"],
+    subtopics: ["All", "Process Management", "Memory Management", "Scheduling Algorithms", "Deadlocks", "File Systems", "Threads & Concurrency", "Virtual Memory"],
     playlists: {
       All: [
         { title: "Complete OS Course", channel: "Gate Smashers", videos: 100, thumbGradient: "from-primary to-blue-500", emoji: "🖥️" },
