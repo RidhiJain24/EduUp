@@ -409,10 +409,25 @@ const subjectData: Record<
   },
 };
 
+type ApiPlaylist = {
+  id?: string;
+  playlistId?: string;
+  title: string;
+  channelName?: string;
+  channelTitle?: string;
+  thumbnail?: string;
+  thumbnailUrl?: string;
+  youtubeUrl?: string;
+  url?: string;
+};
+
 function SearchTopic() {
   const [query, setQuery] = useState("");
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
   const [activeSubtopic, setActiveSubtopic] = useState<string>("All");
+  const [results, setResults] = useState<ApiPlaylist[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const resolveSubject = (raw: string): string | null => {
     const q = raw.trim().toLowerCase();
@@ -442,12 +457,47 @@ function SearchTopic() {
     setActiveSubject(null);
     setActiveSubtopic("All");
     setQuery("");
+    setResults([]);
+    setError(null);
   };
 
   const currentSubject = activeSubject ? subjectData[activeSubject] : null;
-  const currentPlaylists = currentSubject
-    ? currentSubject.playlists[activeSubtopic] ?? currentSubject.playlists["All"]
-    : [];
+
+  useEffect(() => {
+    if (!activeSubject) return;
+    const searchQuery = [activeSubject, activeSubtopic !== "All" ? activeSubtopic : ""]
+      .filter(Boolean)
+      .join(" ");
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetch(
+      `http://localhost:5000/api/playlists/search?query=${encodeURIComponent(searchQuery)}`,
+      { signal: controller.signal },
+    )
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+      })
+      .then((data) => {
+        const list: ApiPlaylist[] = Array.isArray(data)
+          ? data
+          : (data?.playlists ?? data?.results ?? data?.data ?? []);
+        setResults(list);
+        if (!list.length) setError("Couldn't load playlists right now, try again.");
+      })
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        setResults([]);
+        setError("Couldn't load playlists right now, try again.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [activeSubject, activeSubtopic]);
 
   return (
     <section id="courses">
