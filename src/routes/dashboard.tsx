@@ -335,7 +335,7 @@ const subjectData: Record<
     },
   },
   OOP: {
-    subtopics: ["All", "Encapsulation", "Inheritance", "Polymorphism", "Abstraction", "SOLID Principles"],
+    subtopics: ["All", "Classes & Objects", "Inheritance", "Polymorphism", "Encapsulation", "Abstraction", "Design Patterns", "SOLID Principles"],
     playlists: {
       All: [
         { title: "Complete OOP Course", channel: "Telusko", videos: 40, thumbGradient: "from-primary to-blue-500", emoji: "🧱" },
