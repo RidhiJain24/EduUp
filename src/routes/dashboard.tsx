@@ -542,23 +542,27 @@ function SearchTopic() {
         </Button>
       </form>
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Subjects:
-        </span>
-        {subjects.map((s) => (
-          <button
-            key={s}
-            onClick={() => pickSubject(s)}
-            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
-              activeSubject === s
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-foreground hover:border-primary hover:text-primary"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+      <div className="relative mt-5">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Subjects:
+          </span>
+          {subjects.map((s) => (
+            <button
+              key={s}
+              onClick={() => pickSubject(s)}
+              className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
+                activeSubject === s
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:border-primary hover:text-primary"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
       </div>
 
       {currentSubject && (
