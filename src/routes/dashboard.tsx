@@ -220,7 +220,18 @@ function QuickStats() {
   );
 }
 
-const subjects = ["DSA", "DBMS", "System Design", "OOP", "Operating Systems", "Computer Networks"];
+const subjects = [
+  "DSA",
+  "DBMS",
+  "System Design",
+  "OOP",
+  "Operating Systems",
+  "Computer Networks",
+  "Web Development",
+  "Aptitude & Interview Prep",
+  "Machine Learning",
+  "Computer Architecture",
+];
 
 type Playlist = {
   title: string;
@@ -232,10 +243,10 @@ type Playlist = {
 
 const subjectData: Record<
   string,
-  { subtopics: string[]; playlists: Record<string, Playlist[]> }
+  { subtopics: string[]; playlists?: Record<string, Playlist[]> }
 > = {
   DSA: {
-    subtopics: ["All", "Recursion", "Binary Search Trees", "Linked Lists", "Graphs", "Sorting Algorithms"],
+    subtopics: ["All", "Arrays", "Strings", "Recursion", "Backtracking", "Linked Lists", "Stacks & Queues", "Binary Trees", "Binary Search Trees", "Heaps", "Hashing", "Graphs", "Sorting Algorithms", "Searching Algorithms", "Dynamic Programming", "Greedy Algorithms", "Tries", "Bit Manipulation", "Sliding Window"],
     playlists: {
       All: [
         { title: "Complete DSA Bootcamp", channel: "Abdul Bari", videos: 82, thumbGradient: "from-primary to-blue-500", emoji: "🧩" },
@@ -271,7 +282,7 @@ const subjectData: Record<
     },
   },
   DBMS: {
-    subtopics: ["All", "Normalization", "SQL Queries", "Transactions & Concurrency", "Indexing"],
+    subtopics: ["All", "Normalization", "SQL Queries", "Transactions & Concurrency", "Indexing", "ER Diagrams", "Joins", "Database Design"],
     playlists: {
       All: [
         { title: "Complete DBMS Course", channel: "Gate Smashers", videos: 90, thumbGradient: "from-primary to-blue-500", emoji: "🗄️" },
@@ -298,7 +309,7 @@ const subjectData: Record<
     },
   },
   "System Design": {
-    subtopics: ["All", "Load Balancing", "Caching", "Database Sharding", "Microservices"],
+    subtopics: ["All", "Load Balancing", "Caching", "Database Sharding", "Microservices", "API Design", "Scalability", "CAP Theorem"],
     playlists: {
       All: [
         { title: "System Design Primer", channel: "Gaurav Sen", videos: 60, thumbGradient: "from-primary to-blue-500", emoji: "🏗️" },
@@ -324,7 +335,7 @@ const subjectData: Record<
     },
   },
   OOP: {
-    subtopics: ["All", "Encapsulation", "Inheritance", "Polymorphism", "Abstraction", "SOLID Principles"],
+    subtopics: ["All", "Classes & Objects", "Inheritance", "Polymorphism", "Encapsulation", "Abstraction", "Design Patterns", "SOLID Principles"],
     playlists: {
       All: [
         { title: "Complete OOP Course", channel: "Telusko", videos: 40, thumbGradient: "from-primary to-blue-500", emoji: "🧱" },
@@ -351,7 +362,7 @@ const subjectData: Record<
     },
   },
   "Operating Systems": {
-    subtopics: ["All", "Processes & Threads", "CPU Scheduling", "Memory Management", "Deadlocks", "File Systems"],
+    subtopics: ["All", "Process Management", "Memory Management", "Scheduling Algorithms", "Deadlocks", "File Systems", "Threads & Concurrency", "Virtual Memory"],
     playlists: {
       All: [
         { title: "Complete OS Course", channel: "Gate Smashers", videos: 100, thumbGradient: "from-primary to-blue-500", emoji: "🖥️" },
@@ -378,7 +389,7 @@ const subjectData: Record<
     },
   },
   "Computer Networks": {
-    subtopics: ["All", "OSI Model", "TCP/IP", "Routing", "DNS & HTTP", "Network Security"],
+    subtopics: ["All", "OSI Model", "TCP/IP", "Routing", "DNS", "HTTP/HTTPS", "Network Security", "Sockets"],
     playlists: {
       All: [
         { title: "Complete CN Course", channel: "Gate Smashers", videos: 95, thumbGradient: "from-primary to-blue-500", emoji: "🌐" },
@@ -401,6 +412,18 @@ const subjectData: Record<
         { title: "Network Security Basics", channel: "Neso Academy", videos: 12, thumbGradient: "from-primary to-blue-500", emoji: "🛡️" },
       ],
     },
+  },
+  "Web Development": {
+    subtopics: ["All", "HTML & CSS", "JavaScript", "React", "Node.js & Express", "REST APIs", "Responsive Design"],
+  },
+  "Aptitude & Interview Prep": {
+    subtopics: ["All", "Quantitative Aptitude", "Logical Reasoning", "Verbal Ability", "HR Interview Prep", "Technical Interview Prep"],
+  },
+  "Machine Learning": {
+    subtopics: ["All", "Linear Regression", "Classification", "Neural Networks", "Model Evaluation", "Data Preprocessing"],
+  },
+  "Computer Architecture": {
+    subtopics: ["All", "Number Systems", "Logic Gates", "CPU Architecture", "Memory Hierarchy", "Pipelining"],
   },
 };
 
@@ -519,23 +542,27 @@ function SearchTopic() {
         </Button>
       </form>
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        <span className="self-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Subjects:
-        </span>
-        {subjects.map((s) => (
-          <button
-            key={s}
-            onClick={() => pickSubject(s)}
-            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
-              activeSubject === s
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-foreground hover:border-primary hover:text-primary"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
+      <div className="relative mt-5">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Subjects:
+          </span>
+          {subjects.map((s) => (
+            <button
+              key={s}
+              onClick={() => pickSubject(s)}
+              className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
+                activeSubject === s
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:border-primary hover:text-primary"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
       </div>
 
       {currentSubject && (
@@ -555,20 +582,24 @@ function SearchTopic() {
             </button>
           </div>
 
-          <div className="mb-6 flex flex-wrap gap-2">
-            {currentSubject.subtopics.map((t) => (
-              <button
-                key={t}
-                onClick={() => setActiveSubtopic(t)}
-                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
-                  activeSubtopic === t
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-border bg-card text-foreground hover:border-accent hover:text-accent"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+          <div className="relative mb-6">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {currentSubject.subtopics.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setActiveSubtopic(t)}
+                  className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
+                    activeSubtopic === t
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border bg-card text-foreground hover:border-accent hover:text-accent"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
           </div>
 
           {loading ? (
