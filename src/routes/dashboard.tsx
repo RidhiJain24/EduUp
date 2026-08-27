@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GraduationCap,
   Search,
@@ -31,6 +31,14 @@ import {
   Target,
   Medal,
   Sparkles,
+  Sun,
+  Moon,
+  Calendar,
+  CheckCircle2,
+  Crown,
+  Clock,
+  RefreshCw,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -448,6 +456,8 @@ function SearchTopic() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const subtopicContainerRef = useRef<HTMLDivElement | null>(null);
+
   const resolveSubject = (raw: string): string | null => {
     const q = raw.trim().toLowerCase();
     if (!q) return null;
@@ -478,6 +488,18 @@ function SearchTopic() {
     setQuery("");
     setResults([]);
     setError(null);
+  };
+
+  const handleSolveAssignments = (subtopicName: string) => {
+    setActiveSubtopic(subtopicName);
+    toast.success(`Starting assignments for ${subtopicName}`, {
+      description: "Preparing your AI-graded practice questions & instant feedback.",
+      duration: 5000,
+    });
+    const assignmentsEl = document.getElementById("assignments");
+    if (assignmentsEl) {
+      assignmentsEl.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const currentSubject = activeSubject ? subjectData[activeSubject] : null;
@@ -582,7 +604,7 @@ function SearchTopic() {
             </button>
           </div>
 
-          <div className="relative mb-6 w-full min-w-0 max-w-full">
+          <div ref={subtopicContainerRef} className="relative mb-6 w-full min-w-0 max-w-full">
             <div className="flex items-center gap-2 overflow-x-auto py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {currentSubject.subtopics.map((t) => (
                 <button
@@ -590,7 +612,7 @@ function SearchTopic() {
                   onClick={() => setActiveSubtopic(t)}
                   className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 ${
                     activeSubtopic === t
-                      ? "border-accent bg-accent text-accent-foreground"
+                      ? "border-accent bg-accent text-accent-foreground font-semibold shadow-xs"
                       : "border-border bg-card text-foreground hover:border-accent hover:text-accent"
                   }`}
                 >
@@ -599,6 +621,72 @@ function SearchTopic() {
               ))}
             </div>
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
+          </div>
+
+          {/* Solve Assignments Banner (Always visible when subject is active) */}
+          <div className="mb-6 flex flex-col items-center justify-between gap-4 rounded-2xl border border-accent/30 bg-gradient-to-r from-accent/10 via-accent/5 to-background p-5 shadow-soft sm:flex-row">
+            <div className="flex items-center gap-4 text-center sm:text-left">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent text-accent-foreground shadow-soft">
+                <ClipboardCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="font-display text-base font-bold text-foreground">
+                  Ready to test yourself?
+                </h4>
+                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                  {activeSubtopic === "All" ? (
+                    <>
+                      Select a topic above to unlock practice assignments for{" "}
+                      <span className="font-semibold text-foreground">{activeSubject}</span>
+                    </>
+                  ) : (
+                    <>
+                      Solve practice questions on{" "}
+                      <span className="font-semibold text-foreground">{activeSubtopic}</span>
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {activeSubtopic === "All" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    className="h-11 rounded-full bg-accent px-6 text-sm font-bold text-accent-foreground hover:-translate-y-0.5 shadow-sm shrink-0 cursor-pointer"
+                  >
+                    Choose a topic to practice ↓
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-lg">
+                  <DropdownMenuLabel className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    {activeSubject} Topics
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {currentSubject.subtopics
+                    .filter((t) => t !== "All")
+                    .map((subtopic) => (
+                      <DropdownMenuItem
+                        key={subtopic}
+                        onClick={() => handleSolveAssignments(subtopic)}
+                        className="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium cursor-pointer hover:bg-accent/15"
+                      >
+                        <span>{subtopic}</span>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => handleSolveAssignments(activeSubtopic)}
+                className="h-11 rounded-full bg-accent px-6 text-sm font-bold text-accent-foreground hover:-translate-y-0.5 shadow-sm shrink-0 cursor-pointer"
+              >
+                📝 Solve Assignments
+              </Button>
+            )}
           </div>
 
           {loading ? (
@@ -614,7 +702,6 @@ function SearchTopic() {
                     <div className="h-4 w-full animate-pulse rounded-full bg-muted" />
                     <div className="h-4 w-2/3 animate-pulse rounded-full bg-muted" />
                     <div className="mt-4 h-10 w-full animate-pulse rounded-full bg-muted" />
-                    <div className="h-10 w-full animate-pulse rounded-full bg-muted" />
                   </div>
                 </div>
               ))}
@@ -671,7 +758,7 @@ function SearchTopic() {
                       <h4 className="mt-1.5 font-display text-base font-bold text-foreground line-clamp-2">
                         {p.title}
                       </h4>
-                      <div className="mt-4 flex flex-col gap-2">
+                      <div className="mt-4">
                         <Button
                           asChild
                           className="h-10 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5"
@@ -679,12 +766,6 @@ function SearchTopic() {
                           <a href={url} target="_blank" rel="noopener noreferrer">
                             <Play className="mr-1.5 h-3.5 w-3.5" /> Watch Videos
                           </a>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="h-10 w-full rounded-full border-accent text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
-                        >
-                          📝 Solve Assignments
                         </Button>
                       </div>
                     </div>
@@ -724,54 +805,325 @@ function playChime() {
   }
 }
 
-function StudyTimer() {
-  const SESSION = 25 * 60;
-  const [seconds, setSeconds] = useState(SESSION);
-  const [running, setRunning] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+const TIMER_STORAGE_KEY = "eduup_study_timer";
 
-  useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => {
-        setSeconds((s) => (s > 0 ? s - 1 : 0));
-      }, 1000);
+type PresetOption = 15 | 25 | 45 | 60 | "custom";
+type WaterBreakOption = 15 | 30 | 45 | 60 | "off";
+
+const ALL_WATER_BREAK_PRESETS = [15, 30, 45, 60] as const;
+
+function adjustWaterBreakForDuration(currentWb: WaterBreakOption, durationMins: number): WaterBreakOption {
+  if (currentWb === "off") return "off";
+  if (currentWb <= durationMins) return currentWb;
+
+  const valid = ALL_WATER_BREAK_PRESETS.filter((m) => m <= durationMins);
+  if (valid.length > 0) {
+    return valid[valid.length - 1];
+  }
+  return "off";
+}
+
+interface SavedTimerState {
+  durationMinutes: number;
+  preset: PresetOption;
+  customMinutesStr: string;
+  waterBreakInterval: WaterBreakOption;
+  secondsLeft: number;
+  running: boolean;
+  endTimestamp: number | null;
+}
+
+function getInitialTimerState(): SavedTimerState {
+  try {
+    const raw = localStorage.getItem(TIMER_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as SavedTimerState;
+      if (typeof parsed.durationMinutes === "number" && parsed.durationMinutes > 0) {
+        const wbRaw = parsed.waterBreakInterval ?? 45;
+        const wb = adjustWaterBreakForDuration(wbRaw, parsed.durationMinutes);
+        if (parsed.running && parsed.endTimestamp) {
+          const now = Date.now();
+          const remaining = Math.max(0, Math.ceil((parsed.endTimestamp - now) / 1000));
+          if (remaining > 0) {
+            return {
+              ...parsed,
+              waterBreakInterval: wb,
+              secondsLeft: remaining,
+              running: true,
+            };
+          } else {
+            return {
+              ...parsed,
+              waterBreakInterval: wb,
+              secondsLeft: 0,
+              running: false,
+              endTimestamp: null,
+            };
+          }
+        } else {
+          return {
+            ...parsed,
+            waterBreakInterval: wb,
+            running: false,
+            endTimestamp: null,
+          };
+        }
+      }
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [running]);
+  } catch {
+    /* ignore storage errors */
+  }
+
+  const defaultDuration = 25;
+  const defaultWb = adjustWaterBreakForDuration(45, defaultDuration);
+
+  return {
+    durationMinutes: defaultDuration,
+    preset: 25,
+    customMinutesStr: "25",
+    waterBreakInterval: defaultWb,
+    secondsLeft: defaultDuration * 60,
+    running: false,
+    endTimestamp: null,
+  };
+}
+
+function StudyTimer() {
+  const [initialState] = useState(getInitialTimerState);
+  const [preset, setPreset] = useState<PresetOption>(initialState.preset);
+  const [customMinutesStr, setCustomMinutesStr] = useState<string>(initialState.customMinutesStr);
+  const [durationMinutes, setDurationMinutes] = useState<number>(initialState.durationMinutes);
+  const [waterBreakInterval, setWaterBreakInterval] = useState<WaterBreakOption>(initialState.waterBreakInterval);
+  const [seconds, setSeconds] = useState<number>(initialState.secondsLeft);
+  const [running, setRunning] = useState<boolean>(initialState.running);
+  const [showWaterBreakSelector, setShowWaterBreakSelector] = useState(false);
+
+  const endTimestampRef = useRef<number | null>(initialState.endTimestamp);
+
+  const totalSeconds = durationMinutes * 60;
+  const isEditable = !running && seconds === totalSeconds;
+
+  const saveState = (
+    mins: number,
+    pres: PresetOption,
+    custStr: string,
+    wbInt: WaterBreakOption,
+    secLeft: number,
+    isRun: boolean,
+    endTs: number | null
+  ) => {
+    try {
+      const data: SavedTimerState = {
+        durationMinutes: mins,
+        preset: pres,
+        customMinutesStr: custStr,
+        waterBreakInterval: wbInt,
+        secondsLeft: secLeft,
+        running: isRun,
+        endTimestamp: endTs,
+      };
+      localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      /* ignore storage errors */
+    }
+  };
+
+  const handleCompletion = useCallback(
+    (currentDurationMins: number, wb: WaterBreakOption) => {
+      playChime();
+      toast("Session complete! Take a break 🎉", {
+        description: "Nice focus streak. Stretch, hydrate, then go again.",
+        duration: 10000,
+        action: {
+          label: "New session",
+          onClick: () => {
+            const newSec = currentDurationMins * 60;
+            const targetTs = Date.now() + newSec * 1000;
+            setSeconds(newSec);
+            setRunning(true);
+            endTimestampRef.current = targetTs;
+            saveState(currentDurationMins, preset, customMinutesStr, wb, newSec, true, targetTs);
+          },
+        },
+      });
+    },
+    [preset, customMinutesStr]
+  );
 
   useEffect(() => {
-    if (seconds !== 0 || !running) return;
+    if (!running) return;
+
+    const tick = () => {
+      if (endTimestampRef.current) {
+        const remaining = Math.max(0, Math.ceil((endTimestampRef.current - Date.now()) / 1000));
+        setSeconds(remaining);
+        saveState(durationMinutes, preset, customMinutesStr, waterBreakInterval, remaining, true, endTimestampRef.current);
+
+        if (remaining <= 0) {
+          setRunning(false);
+          endTimestampRef.current = null;
+          saveState(durationMinutes, preset, customMinutesStr, waterBreakInterval, 0, false, null);
+          handleCompletion(durationMinutes, waterBreakInterval);
+        }
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        tick();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [running, durationMinutes, preset, customMinutesStr, waterBreakInterval, handleCompletion]);
+
+  const handleSelectPreset = (p: PresetOption) => {
+    if (!isEditable) return;
+    setPreset(p);
+    let newMins = durationMinutes;
+    if (p === "custom") {
+      const parsed = Math.max(1, Math.min(240, parseInt(customMinutesStr, 10) || 25));
+      newMins = parsed;
+    } else {
+      newMins = p;
+    }
+    setDurationMinutes(newMins);
+    const newSec = newMins * 60;
+    setSeconds(newSec);
+
+    const adjustedWb = adjustWaterBreakForDuration(waterBreakInterval, newMins);
+    setWaterBreakInterval(adjustedWb);
+    saveState(newMins, p, customMinutesStr, adjustedWb, newSec, false, null);
+  };
+
+  const handleCustomInputChange = (val: string) => {
+    if (!isEditable) return;
+    setCustomMinutesStr(val);
+    const parsed = Math.max(1, Math.min(240, parseInt(val, 10) || 1));
+    setDurationMinutes(parsed);
+    const newSec = parsed * 60;
+    setSeconds(newSec);
+
+    const adjustedWb = adjustWaterBreakForDuration(waterBreakInterval, parsed);
+    setWaterBreakInterval(adjustedWb);
+    saveState(parsed, "custom", val, adjustedWb, newSec, false, null);
+  };
+
+  const handleSelectWaterBreak = (wb: WaterBreakOption) => {
+    if (!isEditable) return;
+    setWaterBreakInterval(wb);
+    saveState(durationMinutes, preset, customMinutesStr, wb, seconds, false, null);
+  };
+
+  const handleStartPause = () => {
+    setShowWaterBreakSelector(false);
+    if (running) {
+      setRunning(false);
+      endTimestampRef.current = null;
+      saveState(durationMinutes, preset, customMinutesStr, waterBreakInterval, seconds, false, null);
+    } else {
+      const secToRun = seconds === 0 ? totalSeconds : seconds;
+      const targetTs = Date.now() + secToRun * 1000;
+      setSeconds(secToRun);
+      setRunning(true);
+      endTimestampRef.current = targetTs;
+      saveState(durationMinutes, preset, customMinutesStr, waterBreakInterval, secToRun, true, targetTs);
+    }
+  };
+
+  const handleReset = () => {
+    setShowWaterBreakSelector(false);
     setRunning(false);
-    playChime();
-    toast("Session complete! Take a break 🎉", {
-      description: "Nice focus streak. Stretch, hydrate, then go again.",
-      duration: 10000,
-      action: {
-        label: "New session",
-        onClick: () => {
-          setSeconds(SESSION);
-          setRunning(true);
-        },
-      },
-    });
-  }, [seconds, running, SESSION]);
+    endTimestampRef.current = null;
+    const resetSec = totalSeconds;
+    setSeconds(resetSec);
+    saveState(durationMinutes, preset, customMinutesStr, waterBreakInterval, resetSec, false, null);
+  };
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
-  const pct = ((SESSION - seconds) / SESSION) * 100;
+  const pct = totalSeconds > 0 ? ((totalSeconds - seconds) / totalSeconds) * 100 : 0;
+
+  const validWaterBreakOptions = [
+    ...ALL_WATER_BREAK_PRESETS.filter((m) => m <= durationMinutes).map((m) => ({
+      label: `${m}m`,
+      val: m as WaterBreakOption,
+    })),
+    { label: "Off", val: "off" as WaterBreakOption },
+  ];
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-display text-lg font-bold text-foreground">Study timer</h3>
-          <p className="text-xs text-muted-foreground">Pomodoro · 25 min</p>
+          <p className="text-xs text-muted-foreground">Study session · {durationMinutes} min</p>
         </div>
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
           <Zap className="h-5 w-5" />
         </div>
+      </div>
+
+      {/* Duration presets & custom duration UI */}
+      <div className="mt-4 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-muted-foreground">Session Duration</span>
+          {!isEditable && (
+            <span className="text-[10px] text-muted-foreground italic">Reset to change settings</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {([15, 25, 45, 60] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              disabled={!isEditable}
+              onClick={() => handleSelectPreset(m)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                preset === m
+                  ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+              } ${!isEditable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              {m}m
+            </button>
+          ))}
+          <button
+            type="button"
+            disabled={!isEditable}
+            onClick={() => handleSelectPreset("custom")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              preset === "custom"
+                ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+            } ${!isEditable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            Custom
+          </button>
+        </div>
+
+        {preset === "custom" && (
+          <div className="mt-1 flex items-center gap-2">
+            <Input
+              type="number"
+              min={1}
+              max={240}
+              disabled={!isEditable}
+              value={customMinutesStr}
+              onChange={(e) => handleCustomInputChange(e.target.value)}
+              placeholder="Minutes"
+              className="h-8 w-24 text-xs"
+            />
+            <span className="text-xs text-muted-foreground font-medium">minutes</span>
+          </div>
+        )}
       </div>
 
       <div className="my-5 flex flex-col items-center">
@@ -785,17 +1137,18 @@ function StudyTimer() {
 
       <div className="flex gap-2">
         <Button
-          onClick={() => {
-            if (seconds === 0) setSeconds(SESSION);
-            setRunning((r) => !r);
-          }}
+          onClick={handleStartPause}
           className="h-11 flex-1 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5"
         >
-          {running ? <><Pause className="mr-1.5 h-4 w-4" /> Pause</> : <><Play className="mr-1.5 h-4 w-4" /> Start</>}
+          {running ? (
+            <><Pause className="mr-1.5 h-4 w-4" /> Pause</>
+          ) : (
+            <><Play className="mr-1.5 h-4 w-4" /> Start</>
+          )}
         </Button>
         <Button
           variant="outline"
-          onClick={() => { setRunning(false); setSeconds(SESSION); }}
+          onClick={handleReset}
           className="h-11 rounded-full"
           aria-label="Reset"
         >
@@ -803,9 +1156,60 @@ function StudyTimer() {
         </Button>
       </div>
 
-      <p className="mt-4 rounded-xl bg-accent/10 px-3 py-2 text-xs font-medium text-foreground">
-        💧 Take a water break every 45 mins.
-      </p>
+      {/* Water break reminder interactive element below buttons */}
+      <div className="mt-4">
+        {!showWaterBreakSelector ? (
+          <button
+            type="button"
+            disabled={!isEditable}
+            onClick={() => isEditable && setShowWaterBreakSelector(true)}
+            className={`w-full rounded-xl bg-accent/10 px-3.5 py-2.5 text-xs font-medium text-foreground flex items-center justify-between transition-all ${
+              isEditable ? "hover:bg-accent/20 cursor-pointer" : "opacity-75 cursor-default"
+            }`}
+          >
+            <span>
+              {waterBreakInterval === "off"
+                ? "💧 Don't forget to stay hydrated"
+                : `💧 Water break every ${waterBreakInterval} min`}
+            </span>
+            {isEditable && (
+              <span className="text-[10px] font-semibold text-primary">Change</span>
+            )}
+          </button>
+        ) : (
+          <div className="rounded-xl border border-accent/30 bg-accent/10 p-3 text-xs">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-semibold text-foreground">Water break interval</span>
+              <button
+                type="button"
+                onClick={() => setShowWaterBreakSelector(false)}
+                className="text-[10px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {validWaterBreakOptions.map((item) => (
+                <button
+                  key={String(item.val)}
+                  type="button"
+                  onClick={() => {
+                    handleSelectWaterBreak(item.val);
+                    setShowWaterBreakSelector(false);
+                  }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                    waterBreakInterval === item.val
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "bg-background text-foreground hover:bg-muted border border-border/60"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -852,92 +1256,286 @@ function TakeABreak() {
 const SHIELD_CLIP =
   "polygon(50% 0%, 100% 14%, 100% 58%, 50% 100%, 0% 58%, 0% 14%)";
 
-const badgeList = [
-  { name: "First Steps", desc: "Complete your first lesson", icon: Star, earned: true, tint: "from-primary to-blue-500" },
-  { name: "Streak Starter", desc: "Study 3 days in a row", icon: Flame, earned: true, tint: "from-accent to-orange-500" },
-  { name: "Sharp Shooter", desc: "Score 90%+ on an assignment", icon: Target, earned: false, tint: "" },
-  { name: "Marathoner", desc: "Log 10 hours of focus time", icon: Medal, earned: false, tint: "" },
-  { name: "Course Champ", desc: "Finish a full course", icon: Trophy, earned: false, tint: "" },
+export type BadgeTier = "bronze" | "silver" | "gold" | "platinum";
+
+interface BadgeItem {
+  name: string;
+  desc: string;
+  icon: any;
+  earned: boolean;
+  tier: BadgeTier;
+  progress?: string;
+}
+
+const badgeList: BadgeItem[] = [
+  // Bronze Tier
+  { name: "First Steps", desc: "Complete your first lesson", icon: Star, earned: true, tier: "bronze" },
+  { name: "Streak Starter", desc: "Study 3 days in a row", icon: Flame, earned: true, tier: "bronze" },
+
+  // Silver Tier
+  { name: "Week Warrior", desc: "Maintain a 7-day study streak", icon: Calendar, earned: true, tier: "silver" },
+  { name: "Sharp Shooter", desc: "Score 90%+ on an assignment", icon: Target, earned: false, tier: "silver", progress: "Best: 85%" },
+  { name: "Marathoner", desc: "Log 10 hours of focus time", icon: Medal, earned: false, tier: "silver", progress: "4.5 / 10 hrs" },
+  { name: "Multi-Tasker", desc: "Study 3 subjects in 1 day", icon: Layers, earned: false, tier: "silver", progress: "1/3 subjects" },
+
+  // Gold Tier
+  { name: "Deep Focus", desc: "Complete a 60-min focus session", icon: Clock, earned: false, tier: "gold", progress: "Best: 45 min" },
+  { name: "50 Day Streak", desc: "Maintain a 50-day study streak", icon: Zap, earned: false, tier: "gold", progress: "3/50 days" },
+  { name: "Perfectionist", desc: "Score 100% on 3 assignments", icon: CheckCircle2, earned: false, tier: "gold", progress: "0/3 perfect" },
+  { name: "Course Champ", desc: "Finish a full course", icon: Trophy, earned: false, tier: "gold", progress: "40% done" },
+  { name: "Comeback Kid", desc: "Resume after a 5+ day break", icon: RefreshCw, earned: false, tier: "gold", progress: "0/1" },
+
+  // Platinum / Diamond Tier
+  { name: "100 Day Streak", desc: "Maintain a 100-day study streak", icon: Crown, earned: false, tier: "platinum", progress: "3/100 days" },
 ];
 
-function BadgeShield({ badge }: { badge: (typeof badgeList)[number] }) {
+const TIER_STYLES: Record<
+  BadgeTier,
+  {
+    rimBg: string;
+    innerBg: string;
+    glow: string;
+    badgeBg: string;
+    badgeText: string;
+    label: string;
+  }
+> = {
+  bronze: {
+    rimBg: "from-amber-400 via-amber-700 to-amber-950",
+    innerBg: "from-amber-600 via-amber-700 to-amber-900",
+    glow: "from-amber-500 via-amber-600 to-amber-900",
+    badgeBg: "bg-amber-500/10 border-amber-500/30 dark:bg-amber-500/20",
+    badgeText: "text-amber-800 dark:text-amber-300 font-bold",
+    label: "Bronze",
+  },
+  silver: {
+    rimBg: "from-slate-100 via-slate-400 to-slate-800",
+    innerBg: "from-slate-200 via-slate-400 to-slate-700",
+    glow: "from-slate-300 via-slate-400 to-slate-600",
+    badgeBg: "bg-slate-400/10 border-slate-400/30 dark:bg-slate-400/20",
+    badgeText: "text-slate-700 dark:text-slate-200 font-bold",
+    label: "Silver",
+  },
+  gold: {
+    rimBg: "from-yellow-100 via-yellow-400 to-amber-800",
+    innerBg: "from-yellow-200 via-amber-400 to-amber-700",
+    glow: "from-yellow-300 via-amber-400 to-yellow-600",
+    badgeBg: "bg-yellow-500/10 border-yellow-500/30 dark:bg-yellow-500/20",
+    badgeText: "text-yellow-800 dark:text-yellow-300 font-bold",
+    label: "Gold",
+  },
+  platinum: {
+    rimBg: "from-cyan-100 via-sky-300 via-teal-400 to-indigo-800",
+    innerBg: "from-cyan-200 via-sky-400 via-indigo-500 to-purple-700",
+    glow: "from-cyan-300 via-sky-400 via-indigo-500 to-purple-600",
+    badgeBg: "bg-cyan-500/10 border-cyan-500/30 dark:bg-cyan-500/20",
+    badgeText: "text-cyan-800 dark:text-cyan-300 font-bold",
+    label: "Platinum",
+  },
+};
+
+function BadgeShield({ badge }: { badge: BadgeItem }) {
   const Icon = badge.earned ? badge.icon : Lock;
+  const style = TIER_STYLES[badge.tier];
+
   return (
-    <div className="group flex flex-col items-center text-center">
+    <div className="group relative flex flex-col items-center text-center">
+      {/* 3D Shield Container */}
       <div
-        className={`relative h-24 w-20 transition-transform duration-300 ease-out ${
+        className={`relative h-28 w-24 transition-all duration-300 ease-out ${
           badge.earned
-            ? "group-hover:-translate-y-1 group-hover:scale-110 motion-safe:group-hover:animate-scale-in"
-            : "group-hover:scale-105"
+            ? "group-hover:-translate-y-2 group-hover:scale-110 drop-shadow-xl"
+            : "group-hover:scale-105 drop-shadow-md"
         }`}
       >
-        {/* outer shield frame */}
+        {/* Ambient Glow Aura */}
+        {badge.earned && (
+          <div
+            className={`absolute -inset-2 -z-10 rounded-full bg-gradient-to-br ${style.glow} opacity-35 blur-lg transition-all duration-500 group-hover:opacity-90 group-hover:blur-xl`}
+          />
+        )}
+
+        {/* 1. Outer Metallic Bevel Rim */}
         <div
-          className={`absolute inset-0 ${badge.earned ? "bg-gradient-to-br " + badge.tint : "bg-border"}`}
-          style={{ clipPath: SHIELD_CLIP }}
-        />
-        {/* inner face */}
-        <div
-          className={`absolute inset-[3px] ${
-            badge.earned ? "bg-gradient-to-br " + badge.tint : "bg-muted"
+          className={`absolute inset-0 ${
+            badge.earned ? `bg-gradient-to-br ${style.rimBg}` : "bg-border/80"
           }`}
           style={{ clipPath: SHIELD_CLIP }}
         />
-        {/* shine */}
+
+        {/* 2. Inner Metallic Shield Face */}
+        <div
+          className={`absolute inset-[3px] ${
+            badge.earned ? `bg-gradient-to-br ${style.innerBg}` : "bg-muted/90"
+          }`}
+          style={{ clipPath: SHIELD_CLIP }}
+        />
+
+        {/* 3. Embossed 3D Shadow Layer */}
         {badge.earned && (
           <div
-            className="absolute inset-[3px] bg-gradient-to-br from-white/60 via-white/5 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+            className="absolute inset-[3px] bg-gradient-to-b from-black/25 via-transparent to-black/40 pointer-events-none"
             style={{ clipPath: SHIELD_CLIP }}
           />
         )}
-        {/* glow */}
+
+        {/* 4. Glossy Specular Highlight / Polish Line */}
+        {badge.earned && (
+          <>
+            <div
+              className="absolute inset-[3px] bg-gradient-to-b from-white/45 via-white/5 to-transparent pointer-events-none"
+              style={{ clipPath: SHIELD_CLIP }}
+            />
+            <div
+              className="absolute top-1 left-2 h-10 w-16 -rotate-12 rounded-full bg-white/20 blur-[1px] pointer-events-none"
+            />
+          </>
+        )}
+
+        {/* 5. Metallic Light-Sweep Animation on Hover */}
         {badge.earned && (
           <div
-            className={`absolute -inset-1 -z-10 rounded-full bg-gradient-to-br ${badge.tint} opacity-30 blur-lg transition-opacity duration-300 group-hover:opacity-70`}
-          />
+            className="absolute inset-[3px] overflow-hidden pointer-events-none"
+            style={{ clipPath: SHIELD_CLIP }}
+          >
+            <div className="absolute inset-0 -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/85 to-transparent" />
+          </div>
         )}
+
+        {/* 6. Icon */}
         <div className="absolute inset-0 grid place-items-center pb-3">
           <Icon
-            className={`h-7 w-7 ${badge.earned ? "text-white drop-shadow" : "text-muted-foreground"}`}
+            className={`h-8 w-8 ${
+              badge.earned
+                ? "text-white filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                : "text-muted-foreground/60"
+            }`}
           />
         </div>
       </div>
-      <p className={`mt-3 font-display text-sm font-bold ${badge.earned ? "text-foreground" : "text-muted-foreground"}`}>
+
+      {/* Tier Pill */}
+      <span
+        className={`mt-3 inline-block rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+          badge.earned
+            ? `${style.badgeBg} ${style.badgeText}`
+            : "border-border/60 bg-muted/40 text-muted-foreground/70"
+        }`}
+      >
+        {style.label}
+      </span>
+
+      {/* Badge Name & Desc */}
+      <p
+        className={`mt-1 font-display text-xs font-bold leading-tight ${
+          badge.earned ? "text-foreground" : "text-muted-foreground"
+        }`}
+      >
         {badge.name}
       </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{badge.desc}</p>
+      <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground max-w-[130px]">
+        {badge.desc}
+      </p>
     </div>
   );
 }
 
 function BadgesEmpty() {
-  const earned = badgeList.filter((b) => b.earned).length;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const earnedCount = badgeList.filter((b) => b.earned).length;
+
+  // Prioritize unlocked badges first, followed by locked badges
+  const sortedBadges = useMemo(() => {
+    return [...badgeList].sort((a, b) => {
+      if (a.earned && !b.earned) return -1;
+      if (!a.earned && b.earned) return 1;
+      return 0;
+    });
+  }, []);
+
+  // Show 6 badges (single row on desktop) when collapsed, or all 12 when expanded
+  const visibleBadges = isExpanded ? sortedBadges : sortedBadges.slice(0, 6);
+
+  // Find next locked badge dynamically for callout box
+  const nextGoal = badgeList.find((b) => !b.earned) || badgeList[0];
+  const NextGoalIcon = nextGoal.icon;
+  const nextGoalStyle = TIER_STYLES[nextGoal.tier];
+
   return (
-    <section>
-      <div className="mb-6 flex items-end justify-between">
+    <section id="badges">
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Badges & achievements</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Badges & achievements 🏆
+            </h2>
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              className="text-xs font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1 bg-primary/10 px-2.5 py-1 rounded-full transition-colors hover:bg-primary/20"
+            >
+              {isExpanded ? "Show less" : `Show all (${badgeList.length})`}
+            </button>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {earned} of {badgeList.length} unlocked — hover a badge to see it shine.
+            {earnedCount} of {badgeList.length} unlocked — hover an unlocked badge to see its tier shimmer.
           </p>
         </div>
+        <div className="flex flex-wrap gap-2 text-xs font-medium text-muted-foreground">
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-600" /> Bronze</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-400" /> Silver</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Gold</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-cyan-400" /> Platinum</span>
+        </div>
       </div>
-      <div className="rounded-2xl border border-border bg-card p-8 shadow-soft">
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
-          {badgeList.map((b) => (
+
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
+        <div className="grid grid-cols-2 gap-y-8 gap-x-4 sm:grid-cols-3 md:grid-cols-6">
+          {visibleBadges.map((b) => (
             <BadgeShield key={b.name} badge={b} />
           ))}
         </div>
-        <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl bg-muted/50 p-5 text-center sm:flex-row sm:text-left">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-blue-500 text-white">
-            <Sparkles className="h-5 w-5" />
+
+        {/* Expand/Collapse Toggle Button at bottom of grid if collapsed */}
+        {!isExpanded && badgeList.length > 6 && (
+          <div className="mt-6 flex justify-center border-t border-border/40 pt-4">
+            <button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              className="text-xs font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1 bg-muted/60 px-4 py-2 rounded-full hover:bg-muted transition-colors"
+            >
+              Show all ({badgeList.length}) badges ↓
+            </button>
+          </div>
+        )}
+
+        {/* Dynamic Next Goal Box */}
+        <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-border bg-muted/40 p-5 text-center sm:flex-row sm:text-left">
+          <div
+            className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${nextGoalStyle.rimBg} text-white shadow-soft`}
+          >
+            <NextGoalIcon className="h-6 w-6" />
           </div>
           <div className="flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent">Next goal</p>
-            <h3 className="font-display text-base font-bold text-foreground">Sharp Shooter</h3>
-            <p className="text-sm text-muted-foreground">Score 90%+ on an assignment to unlock this shield.</p>
+            <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <span className="text-[10px] font-extrabold uppercase tracking-wide text-accent">Next Goal</span>
+              <span
+                className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold uppercase ${nextGoalStyle.badgeBg} ${nextGoalStyle.badgeText}`}
+              >
+                {nextGoalStyle.label} Tier
+              </span>
+            </div>
+            <h3 className="font-display text-base font-bold text-foreground mt-0.5">
+              {nextGoal.name}
+            </h3>
+            <p className="text-sm text-muted-foreground">{nextGoal.desc}</p>
+            {nextGoal.progress && (
+              <p className="mt-1 text-xs font-semibold text-accent">
+                Progress: {nextGoal.progress}
+              </p>
+            )}
           </div>
-          <Button className="rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
+          <Button className="rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:-translate-y-0.5 shadow-xs">
             Start a lesson
           </Button>
         </div>
@@ -1104,8 +1702,8 @@ function Dashboard() {
 
           <TakeABreak />
           <ProgressEmpty />
-          <BadgesEmpty />
           <FeedbackEmpty />
+          <BadgesEmpty />
           <StudyNews />
         </main>
       </div>
