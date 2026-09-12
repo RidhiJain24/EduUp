@@ -1,0 +1,110 @@
+[
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to calculate the factorial of a non-negative integer n.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "easy"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to compute the nth Fibonacci number.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "easy"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to reverse a given string.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "easy"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to check whether a given string is a palindrome.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "easy"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to find the sum of digits of a given number.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "easy"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to calculate x raised to the power n (x^n).",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "medium"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to find the greatest common divisor (GCD) of two numbers.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "medium"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to generate all subsets (the power set) of a given array.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "medium"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to generate all permutations of a given string.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "medium"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to solve the Tower of Hanoi problem for n disks, printing each move.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "hard"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to flatten a nested array (an array that may contain other arrays at any depth) into a single flat array.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "hard"
+  },
+  {
+    "subject": "DSA",
+    "subtopic": "Recursion",
+    "type": "coding",
+    "questionText": "Write a recursive function to count the number of ways to climb a staircase of n steps, where you can take either 1 or 2 steps at a time.",
+    "options": [],
+    "correctOption": null,
+    "difficulty": "hard"
+  }
+]

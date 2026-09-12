@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "seed:questions": "node prisma/seedQuestions.js",
+    "generate:questions": "node scripts/generateQuestions.js",
+    "generate:all": "node scripts/generateAllQuestions.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,6 +16,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.22.0",
     "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",

@@ -482,6 +482,8 @@ function SearchTopic() {
     setActiveSubtopic("All");
   };
 
+  const navigate = useNavigate();
+
   const clearAll = () => {
     setActiveSubject(null);
     setActiveSubtopic("All");
@@ -491,15 +493,19 @@ function SearchTopic() {
   };
 
   const handleSolveAssignments = (subtopicName: string) => {
-    setActiveSubtopic(subtopicName);
-    toast.success(`Starting assignments for ${subtopicName}`, {
-      description: "Preparing your AI-graded practice questions & instant feedback.",
-      duration: 5000,
+    const subject = activeSubject || "DSA";
+    const subtopic =
+      subtopicName === "All"
+        ? (subjectData[subject]?.subtopics?.find((s) => s !== "All") || "Recursion")
+        : subtopicName;
+
+    navigate({
+      to: "/assignments/$subject/$subtopic",
+      params: {
+        subject,
+        subtopic,
+      },
     });
-    const assignmentsEl = document.getElementById("assignments");
-    if (assignmentsEl) {
-      assignmentsEl.scrollIntoView({ behavior: "smooth" });
-    }
   };
 
   const currentSubject = activeSubject ? subjectData[activeSubject] : null;

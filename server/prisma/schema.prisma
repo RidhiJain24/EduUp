@@ -8,13 +8,12 @@ datasource db {
 }
 
 model User {
-  id           String       @id @default(uuid())
+  id           String      @id @default(uuid())
   name         String
-  email        String       @unique
+  email        String      @unique
   passwordHash String
-  streak       Int          @default(0)
-  createdAt    DateTime     @default(now())
-  submissions  Submission[]
+  streak       Int         @default(0)
+  createdAt    DateTime    @default(now())
   userBadges   UserBadge[]
 }
 
@@ -30,7 +29,6 @@ model Subtopic {
   subject   Subject    @relation(fields: [subjectId], references: [id])
   name      String
   playlists Playlist[]
-  questions Question[]
 }
 
 model Playlist {
@@ -44,20 +42,22 @@ model Playlist {
 }
 
 model Question {
-  id           String       @id @default(uuid())
-  subtopicId   String
-  subtopic     Subtopic     @relation(fields: [subtopicId], references: [id])
-  questionText String
-  difficulty   String
-  submissions  Submission[]
+  id            String   @id @default(cuid())
+  subject       String
+  subtopic      String
+  type          String
+  questionText  String
+  options       String[]
+  correctOption Int?
+  difficulty    String   @default("medium")
+  assignmentSet String   @default("Set 1")
+  createdAt     DateTime @default(now())
 }
 
 model Submission {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
   questionId  String
-  question    Question @relation(fields: [questionId], references: [id])
   answerText  String
   aiScore     Int?
   aiFeedback  String?
