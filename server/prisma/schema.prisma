@@ -59,6 +59,7 @@ model Submission {
   userId      String
   questionId  String
   answerText  String
+  isCorrect   Boolean?
   aiScore     Int?
   aiFeedback  String?
   submittedAt DateTime @default(now())

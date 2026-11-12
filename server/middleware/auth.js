@@ -10,7 +10,7 @@ const auth = (req, res, next) => {
   try {
     // Allows "Bearer <token>" or just "<token>"
     const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
-    req.user = decoded.user;
+    req.user = decoded.user || decoded;
     next();
   } catch (err) {
     res.status(401).json({ message: 'Token is not valid' });
