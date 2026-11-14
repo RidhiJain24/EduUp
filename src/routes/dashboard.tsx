@@ -135,7 +135,7 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, API_URL } from "@/lib/api";
 
 function Logo() {
   return (
@@ -676,7 +676,7 @@ function SearchTopic() {
     setError(null);
 
     fetch(
-      `http://localhost:5000/api/playlists/search?query=${encodeURIComponent(searchQuery)}`,
+      `${API_URL}/playlists/search?query=${encodeURIComponent(searchQuery)}`,
       { signal: controller.signal },
     )
       .then(async (res) => {

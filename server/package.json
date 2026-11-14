@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "postinstall": "prisma generate",
     "db:export": "node scripts/exportDb.js",
     "db:import:questions": "node scripts/importQuestions.js",
     "seed:questions": "node prisma/seedQuestions.js",
@@ -26,10 +27,10 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "prisma": "^5.22.0",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14",
-    "prisma": "^5.22.0"
+    "nodemon": "^3.1.14"
   }
 }
