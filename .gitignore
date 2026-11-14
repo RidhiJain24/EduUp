@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Database backups (contain sensitive user data)
+server/backups/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

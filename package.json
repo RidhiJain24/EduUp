@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "seed:questions": "npm --prefix server run seed:questions"
+    "seed:questions": "npm --prefix server run seed:questions",
+    "db:export": "npm --prefix server run db:export",
+    "db:import:questions": "npm --prefix server run db:import:questions"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -30,6 +30,26 @@ improvement tips.
 **Database:** PostgreSQL (Neon) with Prisma ORM  
 **Auth:** JWT-based authentication with bcrypt password hashing
 
+## Database Backup & Restore
+
+EduUp includes scripts to snapshot database state and safely seed or restore question banks:
+
+### Export Full Database & Question Seeds
+```bash
+npm run db:export
+```
+- Queries all Prisma tables (`User`, `Subject`, `Subtopic`, `Playlist`, `Question`, `Submission`, `UserBadge`).
+- Dumps each table to `server/backups/<timestamp>/<table_name>.json` with row counts and file sizes. Backups are automatically ignored by git to protect student data.
+- Exports the canonical `Question` bank (retaining original IDs, assignments, and explanations) to `server/prisma/seed-data/questions.json` for version control.
+
+### Import / Restore Question Bank
+```bash
+npm run db:import:questions
+```
+- Reads `server/prisma/seed-data/questions.json`.
+- Restores the questions in batches of 500 using `createMany` with `skipDuplicates: true`.
+- Idempotent and safe to run multiple times without duplicating or overwriting existing question IDs.
+
 ## Status
 
 🚧 In active development — currently built: landing page, auth (signup/

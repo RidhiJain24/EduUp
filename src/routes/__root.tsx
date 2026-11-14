@@ -78,16 +78,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "EduUp — Learn smarter with AI-powered feedback" },
-      { name: "description", content: "EduUp helps students master courses with AI-graded assignments, progress tracking, and achievement badges." },
-      { property: "og:title", content: "EduUp — Learn smarter with AI-powered feedback" },
-      { property: "og:description", content: "AI-graded assignments, progress tracking, and achievement badges for ambitious students." },
+      { title: "EduUp - Learn smarter with AI feedback" },
+      {
+        name: "description",
+        content:
+          "EduUp is a learning platform for CSE students with curated playlists and AI-reviewed assignments.",
+      },
+      { property: "og:title", content: "EduUp - Learn smarter with AI feedback" },
+      {
+        property: "og:description",
+        content:
+          "A learning platform for CSE students with curated playlists and AI-reviewed assignments.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/favicon.png" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "EduUp - Learn smarter with AI feedback" },
+      {
+        name: "twitter:description",
+        content:
+          "A learning platform for CSE students with curated playlists and AI-reviewed assignments.",
+      },
+      { name: "twitter:image", content: "/favicon.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" },

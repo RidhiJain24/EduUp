@@ -109,9 +109,25 @@ function SignupPage() {
                 <Checkbox id="terms" checked={terms} onCheckedChange={(c) => setTerms(c as boolean)} className="mt-0.5 h-5 w-5 rounded-[4px] border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground" />
                 <Label htmlFor="terms" className="text-sm font-normal leading-relaxed text-muted-foreground">
                   I agree to the{" "}
-                  <a href="#" className="font-medium text-primary hover:underline">Terms</a>
-                  {" "}&{" "}
-                  <a href="#" className="font-medium text-primary hover:underline">Privacy Policy</a>
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-medium text-primary hover:underline cursor-pointer"
+                  >
+                    Terms
+                  </a>{" "}
+                  &{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-medium text-primary hover:underline cursor-pointer"
+                  >
+                    Privacy Policy
+                  </a>
                 </Label>
               </div>
               <Button type="submit" disabled={loading} className="h-11 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-glow">

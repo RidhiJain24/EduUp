@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "db:export": "node scripts/exportDb.js",
+    "db:import:questions": "node scripts/importQuestions.js",
     "seed:questions": "node prisma/seedQuestions.js",
     "generate:questions": "node scripts/generateQuestions.js",
     "generate:all": "node scripts/generateAllQuestions.js",
