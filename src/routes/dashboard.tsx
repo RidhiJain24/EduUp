@@ -55,6 +55,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  TakeABreakSection,
+  TakeABreakModal,
+  getBestScores,
+  type BreakGameType,
+  type GameBestScores,
+} from "@/components/dashboard/TakeABreakGames";
 
 interface ProgressBadge {
   badgeKey: string;
@@ -1035,7 +1042,7 @@ function getInitialTimerState(): SavedTimerState {
   };
 }
 
-function StudyTimer() {
+function StudyTimer({ onOpenGame }: { onOpenGame?: () => void }) {
   const [initialState] = useState(getInitialTimerState);
   const [preset, setPreset] = useState<PresetOption>(initialState.preset);
   const [customMinutesStr, setCustomMinutesStr] = useState<string>(initialState.customMinutesStr);
@@ -1079,22 +1086,22 @@ function StudyTimer() {
     (currentDurationMins: number, wb: WaterBreakOption) => {
       playChime();
       toast("Session complete! Take a break 🎉", {
-        description: "Nice focus streak. Stretch, hydrate, then go again.",
-        duration: 10000,
+        description: "Nice focus streak. Stretch, hydrate, and refresh your mind with a quick game.",
+        duration: 12000,
         action: {
-          label: "New session",
+          label: "Play a quick game 🎮",
           onClick: () => {
-            const newSec = currentDurationMins * 60;
-            const targetTs = Date.now() + newSec * 1000;
-            setSeconds(newSec);
-            setRunning(true);
-            endTimestampRef.current = targetTs;
-            saveState(currentDurationMins, preset, customMinutesStr, wb, newSec, true, targetTs);
+            if (onOpenGame) {
+              onOpenGame();
+            } else {
+              const el = document.getElementById("take-a-break");
+              if (el) el.scrollIntoView({ behavior: "smooth" });
+            }
           },
         },
       });
     },
-    [preset, customMinutesStr]
+    [onOpenGame]
   );
 
   useEffect(() => {
@@ -1362,43 +1369,7 @@ function StudyTimer() {
 }
 
 
-const breakGames = [
-  { name: "Word Scramble", desc: "Unscramble letters to form real words against the clock.", icon: Puzzle, tint: "from-primary to-blue-500" },
-  { name: "Quick Math Quiz", desc: "Sharpen your mental math with 60 seconds of quick sums.", icon: Calculator, tint: "from-accent to-orange-500" },
-  { name: "Memory Match", desc: "Flip cards and match pairs to boost focus and memory.", icon: Brain, tint: "from-emerald-500 to-teal-500" },
-];
 
-function TakeABreak() {
-  return (
-    <section className="rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
-      <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            Feeling tired? Refresh your mind 🎮
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Quick brain games to recharge between study sessions.</p>
-        </div>
-      </div>
-      <div className="grid gap-5 sm:grid-cols-3">
-        {breakGames.map((g) => (
-          <div
-            key={g.name}
-            className="flex flex-col rounded-2xl border border-border bg-background p-6 shadow-soft transition-transform hover:-translate-y-1"
-          >
-            <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${g.tint} text-white shadow-soft`}>
-              <g.icon className="h-6 w-6" />
-            </div>
-            <h3 className="mt-4 font-display text-base font-bold text-foreground">{g.name}</h3>
-            <p className="mt-1 flex-1 text-sm text-muted-foreground">{g.desc}</p>
-            <Button className="mt-5 h-10 rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:-translate-y-0.5">
-              <Play className="mr-1.5 h-3.5 w-3.5" /> Play
-            </Button>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 const SHIELD_CLIP =
   "polygon(50% 0%, 100% 14%, 100% 58%, 50% 100%, 0% 58%, 0% 14%)";
@@ -2106,6 +2077,21 @@ function Dashboard() {
   const weeklyActivity = progress?.weeklyActivity ?? [];
   const recentFeedback = progress?.recentFeedback ?? [];
 
+  const [activeBreakGame, setActiveBreakGame] = useState<BreakGameType | null>(null);
+  const [bestScores, setBestScores] = useState<GameBestScores>(getBestScores);
+
+  const refreshBestScores = useCallback(() => {
+    setBestScores(getBestScores());
+  }, []);
+
+  const handleOpenBreakGame = useCallback((game: BreakGameType = "scramble") => {
+    setActiveBreakGame(game);
+    const el = document.getElementById("take-a-break");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
@@ -2134,11 +2120,24 @@ function Dashboard() {
               <SearchTopic />
             </div>
             <div className="space-y-6">
-              <StudyTimer />
+              <StudyTimer onOpenGame={() => handleOpenBreakGame("scramble")} />
             </div>
           </div>
 
-          <TakeABreak />
+          <TakeABreakSection
+            onPlayGame={(game) => handleOpenBreakGame(game)}
+            bestScores={bestScores}
+          />
+
+          <TakeABreakModal
+            isOpen={activeBreakGame !== null}
+            initialGame={activeBreakGame || "scramble"}
+            onClose={() => {
+              setActiveBreakGame(null);
+              refreshBestScores();
+            }}
+            onScoreUpdated={refreshBestScores}
+          />
 
           {progressLoading && !progress ? (
             <div className="rounded-3xl border border-border bg-card p-8 shadow-soft animate-pulse">
