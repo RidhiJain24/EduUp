@@ -2032,6 +2032,21 @@ function Dashboard() {
   const [progressLoading, setProgressLoading] = useState(true);
   const [progressError, setProgressError] = useState<string | null>(null);
 
+  const [activeBreakGame, setActiveBreakGame] = useState<BreakGameType | null>(null);
+  const [bestScores, setBestScores] = useState<GameBestScores>(getBestScores);
+
+  const refreshBestScores = useCallback(() => {
+    setBestScores(getBestScores());
+  }, []);
+
+  const handleOpenBreakGame = useCallback((game: BreakGameType = "scramble") => {
+    setActiveBreakGame(game);
+    const el = document.getElementById("take-a-break");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
+
   const loadProgress = useCallback(async () => {
     setProgressLoading(true);
     setProgressError(null);
@@ -2076,21 +2091,6 @@ function Dashboard() {
   const badges = progress?.badges ?? [];
   const weeklyActivity = progress?.weeklyActivity ?? [];
   const recentFeedback = progress?.recentFeedback ?? [];
-
-  const [activeBreakGame, setActiveBreakGame] = useState<BreakGameType | null>(null);
-  const [bestScores, setBestScores] = useState<GameBestScores>(getBestScores);
-
-  const refreshBestScores = useCallback(() => {
-    setBestScores(getBestScores());
-  }, []);
-
-  const handleOpenBreakGame = useCallback((game: BreakGameType = "scramble") => {
-    setActiveBreakGame(game);
-    const el = document.getElementById("take-a-break");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
