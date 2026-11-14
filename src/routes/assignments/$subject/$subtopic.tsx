@@ -174,6 +174,38 @@ function SolveAssignmentsPage() {
   const [resultsLoading, setResultsLoading] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({});
 
+  // Explanations state for MCQ questions
+  const [mcqExplanations, setMcqExplanations] = useState<Record<string, string | null>>({});
+  const [loadingExplanation, setLoadingExplanation] = useState<Record<string, boolean>>({});
+
+  const fetchMCQExplanation = useCallback(async (questionId: string) => {
+    if (!questionId) return;
+    setLoadingExplanation((prev) => ({ ...prev, [questionId]: true }));
+
+    try {
+      const data = await fetchAPI(`/questions/${questionId}/explanation`);
+      const explanationText =
+        data && typeof data.explanation === "string" && data.explanation.trim()
+          ? data.explanation.trim()
+          : null;
+      setMcqExplanations((prev) => ({
+        ...prev,
+        [questionId]: explanationText,
+      }));
+    } catch (err) {
+      console.warn("Failed to fetch MCQ explanation:", err);
+      setMcqExplanations((prev) => ({
+        ...prev,
+        [questionId]: null,
+      }));
+    } finally {
+      setLoadingExplanation((prev) => ({
+        ...prev,
+        [questionId]: false,
+      }));
+    }
+  }, []);
+
   // 1. Fetch available sets when page loads or subject/subtopic changes
   const loadSets = useCallback(() => {
     let isMounted = true;
@@ -314,11 +346,23 @@ function SolveAssignmentsPage() {
     }
   };
 
-  const toggleQuestionExpand = (id: string) => {
+  const toggleQuestionExpand = (id: string, qType?: string, isCorrect?: boolean | null) => {
+    const nextExpanded = !expandedQuestions[id];
     setExpandedQuestions((prev) => ({
       ...prev,
-      [id]: !prev[id],
+      [id]: nextExpanded,
     }));
+
+    // On the results screen: for each incorrect MCQ, fetch explanation when expanded, not all at once
+    if (
+      nextExpanded &&
+      qType?.toLowerCase() === "mcq" &&
+      (isCorrect === false || isCorrect === null) &&
+      mcqExplanations[id] === undefined &&
+      !loadingExplanation[id]
+    ) {
+      fetchMCQExplanation(id);
+    }
   };
 
   // 4. Fetch results whenever assignment set is marked complete
@@ -369,6 +413,30 @@ function SolveAssignmentsPage() {
     currentQuestion.options[activeCorrectOptIdx]
       ? currentQuestion.options[activeCorrectOptIdx]
       : null;
+
+  // In the active MCQ solving flow, automatically fetch explanation if current question is submitted as incorrect
+  useEffect(() => {
+    if (
+      !isCompleted &&
+      currentQuestion &&
+      currentQuestion.type === "mcq" &&
+      isCurrentSubmitted &&
+      currentSubmission?.isCorrect === false &&
+      mcqExplanations[currentQuestion.id] === undefined &&
+      !loadingExplanation[currentQuestion.id]
+    ) {
+      fetchMCQExplanation(currentQuestion.id);
+    }
+  }, [
+    isCompleted,
+    currentQuestion?.id,
+    currentQuestion?.type,
+    isCurrentSubmitted,
+    currentSubmission?.isCorrect,
+    mcqExplanations,
+    loadingExplanation,
+    fetchMCQExplanation,
+  ]);
 
   const handleSelectOption = (_optionIndex: number, optionText: string) => {
     if (!currentQuestion || isCurrentSubmitted) return;
@@ -449,8 +517,10 @@ function SolveAssignmentsPage() {
           });
         } else {
           toast.error("Incorrect answer", {
-            description: res.explanation || "Review the correct answer below.",
+            description: res.explanation || "Review the explanation below.",
           });
+          // Immediately fetch AI explanation for the incorrect MCQ
+          fetchMCQExplanation(currentQuestion.id);
         }
       } else if (res.status === "pending_ai_review") {
         toast.info("Submission saved", {
@@ -1157,23 +1227,17 @@ function SolveAssignmentsPage() {
                                 </span>
                               </div>
 
-                              {/* For incorrect ones: inline / expandable correct answer + explanation */}
+                              {/* For incorrect ones: inline correct answer banner */}
                               {isMcq && (q.isCorrect === false || !q.isCorrect) && (
                                 <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/20 p-3.5 space-y-1.5">
                                   <div className="text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                                     <Check className="h-4 w-4 stroke-[2.5]" />
                                     <span>Correct Answer: {q.correctAnswer || (q.correctOption !== null && q.correctOption !== undefined && q.options ? q.options[q.correctOption] : "N/A")}</span>
                                   </div>
-                                  {q.explanation && (
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      <span className="font-semibold text-foreground">Explanation: </span>
-                                      {q.explanation}
-                                    </p>
-                                  )}
                                 </div>
                               )}
 
-                              {/* For correct MCQ: show explanation inline */}
+                              {/* For correct MCQ: show explanation inline if available */}
                               {isMcq && q.isCorrect === true && q.explanation && (
                                 <div className="mt-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-2.5 text-xs text-muted-foreground">
                                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">Explanation: </span>
@@ -1181,51 +1245,92 @@ function SolveAssignmentsPage() {
                                 </div>
                               )}
 
-                              {/* Expandable options preview */}
-                              {q.options && q.options.length > 0 && (
-                                <div className="mt-2.5 pt-1">
+                              {/* Expandable Explanation & Options for MCQ */}
+                              {isMcq && (
+                                <div className="mt-2.5 pt-1 space-y-2.5">
                                   <button
                                     type="button"
-                                    onClick={() => toggleQuestionExpand(q.id)}
-                                    className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                    onClick={() => toggleQuestionExpand(q.id, q.type, q.isCorrect)}
+                                    className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1.5 cursor-pointer"
                                   >
-                                    <span>{isExpanded ? "Hide all options" : "Show all options"}</span>
-                                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                    <span>
+                                      {isExpanded
+                                        ? (q.isCorrect === false || !q.isCorrect)
+                                          ? "Hide explanation & options"
+                                          : "Hide all options"
+                                        : (q.isCorrect === false || !q.isCorrect)
+                                        ? "View explanation & options"
+                                        : "Show all options"}
+                                    </span>
+                                    {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                                   </button>
 
                                   {isExpanded && (
-                                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 animate-in fade-in duration-200">
-                                      {q.options.map((opt, optIndex) => {
-                                        const isRight = optIndex === q.correctOption || opt === q.correctAnswer;
-                                        const isStudentPick = opt === q.userAnswer || opt === q.answer;
-                                        return (
-                                          <div
-                                            key={optIndex}
-                                            className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
-                                              isRight
-                                                ? "border-emerald-500/60 bg-emerald-500/10 font-semibold text-emerald-950 dark:text-emerald-100"
-                                                : isStudentPick
-                                                ? "border-destructive/60 bg-destructive/10 text-destructive line-through"
-                                                : "border-border/60 bg-card/60 text-muted-foreground"
-                                            }`}
-                                          >
-                                            <span className="flex items-center gap-2 min-w-0">
-                                              <span className="font-bold shrink-0">{String.fromCharCode(65 + optIndex)}.</span>
-                                              <span className="truncate">{opt}</span>
-                                            </span>
-                                            {isRight && (
-                                              <Badge className="bg-emerald-600 text-white text-[10px] py-0 px-1.5 shrink-0">
-                                                Correct
-                                              </Badge>
-                                            )}
-                                            {!isRight && isStudentPick && (
-                                              <Badge variant="destructive" className="text-[10px] py-0 px-1.5 shrink-0">
-                                                You
-                                              </Badge>
-                                            )}
+                                    <div className="space-y-3 pt-1 animate-in fade-in duration-200">
+                                      {/* On-demand fetched explanation for incorrect MCQ */}
+                                      {(q.isCorrect === false || !q.isCorrect) && (
+                                        loadingExplanation[q.id] ? (
+                                          <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3.5 py-2.5 text-xs text-accent animate-pulse shadow-sm">
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin text-accent shrink-0" />
+                                            <span className="font-semibold">Generating explanation...</span>
+                                            <Sparkles className="h-3.5 w-3.5 text-accent ml-auto" />
                                           </div>
-                                        );
-                                      })}
+                                        ) : mcqExplanations[q.id] ? (
+                                          <div className="rounded-xl border border-accent/30 bg-card p-3.5 shadow-sm space-y-1.5 text-left">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-accent">
+                                              <Lightbulb className="h-3.5 w-3.5 text-accent shrink-0" />
+                                              <span className="uppercase tracking-wider">Explanation</span>
+                                              <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0 border-accent/30 text-accent font-semibold">
+                                                AI Tutor
+                                              </Badge>
+                                            </div>
+                                            <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                                              {mcqExplanations[q.id]}
+                                            </p>
+                                          </div>
+                                        ) : (
+                                          <p className="text-xs text-muted-foreground leading-relaxed">
+                                            The correct answer is {q.correctAnswer || (q.correctOption !== null && q.correctOption !== undefined && q.options ? q.options[q.correctOption] : "the indicated option")}.
+                                          </p>
+                                        )
+                                      )}
+
+                                      {/* Options preview */}
+                                      {q.options && q.options.length > 0 && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                          {q.options.map((opt, optIndex) => {
+                                            const isRight = optIndex === q.correctOption || opt === q.correctAnswer;
+                                            const isStudentPick = opt === q.userAnswer || opt === q.answer;
+                                            return (
+                                              <div
+                                                key={optIndex}
+                                                className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                                                  isRight
+                                                    ? "border-emerald-500/60 bg-emerald-500/10 font-semibold text-emerald-950 dark:text-emerald-100"
+                                                    : isStudentPick
+                                                    ? "border-destructive/60 bg-destructive/10 text-destructive line-through"
+                                                    : "border-border/60 bg-card/60 text-muted-foreground"
+                                                }`}
+                                              >
+                                                <span className="flex items-center gap-2 min-w-0">
+                                                  <span className="font-bold shrink-0">{String.fromCharCode(65 + optIndex)}.</span>
+                                                  <span className="truncate">{opt}</span>
+                                                </span>
+                                                {isRight && (
+                                                  <Badge className="bg-emerald-600 text-white text-[10px] py-0 px-1.5 shrink-0">
+                                                    Correct
+                                                  </Badge>
+                                                )}
+                                                {!isRight && isStudentPick && (
+                                                  <Badge variant="destructive" className="text-[10px] py-0 px-1.5 shrink-0">
+                                                    You
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1737,7 +1842,7 @@ function SolveAssignmentsPage() {
                           </p>
                         </>
                       ) : (
-                        <>
+                        <div className="space-y-2.5 w-full min-w-0">
                           <h5 className="font-display text-sm font-bold flex items-center gap-1.5 text-destructive">
                             <span>Incorrect Answer</span>
                             <XCircle className="h-4 w-4" />
@@ -1748,13 +1853,35 @@ function SolveAssignmentsPage() {
                               <span>Correct Answer: {activeCorrectOptionText}</span>
                             </div>
                           )}
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {currentSubmission?.explanation ||
-                              (activeCorrectOptionText
+
+                          {/* Explanation Box or Generating Loader under correct answer */}
+                          {loadingExplanation[currentQuestion.id] ? (
+                            <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-3.5 py-2.5 text-xs text-accent shadow-sm animate-pulse">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-accent shrink-0" />
+                              <span className="font-semibold">Generating explanation...</span>
+                              <Sparkles className="h-3.5 w-3.5 text-accent ml-auto animate-pulse" />
+                            </div>
+                          ) : mcqExplanations[currentQuestion.id] ? (
+                            <div className="rounded-xl border border-accent/30 bg-card/95 p-3.5 shadow-sm space-y-1.5 text-left">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-accent">
+                                <Lightbulb className="h-3.5 w-3.5 text-accent shrink-0" />
+                                <span className="uppercase tracking-wider">Explanation</span>
+                                <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0 border-accent/30 text-accent font-semibold">
+                                  AI Tutor
+                                </Badge>
+                              </div>
+                              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                                {mcqExplanations[currentQuestion.id]}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {activeCorrectOptionText
                                 ? `The correct answer is ${activeCorrectOptionText}`
-                                : "Review the question and try to understand the concept.")}
-                          </p>
-                        </>
+                                : "Review the question and try to understand the concept."}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

@@ -51,6 +51,7 @@ model Question {
   correctOption Int?
   difficulty    String   @default("medium")
   assignmentSet String   @default("Set 1")
+  explanation   String?
   createdAt     DateTime @default(now())
 }
 

@@ -218,6 +218,150 @@ async function evaluateCodingSubmission(questionText, studentCode) {
   throw lastError || new Error('Coding evaluation failed after retry');
 }
 
+/**
+ * Builds prompt for generating an MCQ explanation
+ */
+function buildMCQExplanationPrompt(questionText, options, correctOption) {
+  const optionsText = Array.isArray(options)
+    ? options.map((opt, idx) => `${String.fromCharCode(65 + idx)}. ${opt}`).join('\n')
+    : 'None provided';
+
+  let correctText = '';
+  if (
+    correctOption !== null &&
+    correctOption !== undefined &&
+    Array.isArray(options) &&
+    options[correctOption] !== undefined
+  ) {
+    correctText = `${String.fromCharCode(65 + correctOption)}. ${options[correctOption]}`;
+  } else if (correctOption !== null && correctOption !== undefined) {
+    correctText = `Option index ${correctOption}`;
+  } else {
+    correctText = 'Not specified';
+  }
+
+  return `You are an educational tutor explaining a multiple-choice question.
+
+Question:
+${questionText}
+
+Options:
+${optionsText}
+
+Correct Answer:
+${correctText}
+
+Provide a short explanation (exactly 3-4 sentences) explaining why the correct answer is right and why the other options are wrong.
+Rules:
+- Plain text only.
+- Do NOT use markdown (no asterisks, no bullet points, no bold, no italics, no code blocks, no backticks).
+- Keep it clear, concise, and helpful for a student.`;
+}
+
+/**
+ * Strips markdown formatting to ensure plain text only
+ */
+function cleanPlainText(text) {
+  if (!text || typeof text !== 'string') return '';
+  let cleaned = text.trim();
+
+  // Strip code fences if present
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:\w+)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+  }
+
+  // Remove markdown formatting symbols
+  cleaned = cleaned
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^#+\s+/gm, '')
+    .replace(/^\s*[-*•]\s+/gm, '');
+
+  return cleaned.trim();
+}
+
+/**
+ * Call Gemini model with model preferences fallback for plain text explanation
+ */
+async function callGeminiForExplanation(genAI, prompt) {
+  let lastError = null;
+
+  for (const modelName of MODEL_PREFERENCES) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: 0.3,
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const rawText = response.text();
+      return { rawText, modelUsed: modelName };
+    } catch (err) {
+      lastError = err;
+      const isUnavailable =
+        err.message?.includes('404') ||
+        err.message?.includes('no longer available') ||
+        err.message?.includes('not found') ||
+        err.message?.includes('503') ||
+        err.message?.includes('429') ||
+        err.message?.includes('RESOURCE_EXHAUSTED') ||
+        err.message?.includes('quota') ||
+        err.status === 404 ||
+        err.status === 503 ||
+        err.status === 429;
+
+      if (isUnavailable) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error('No available Gemini model could be reached.');
+}
+
+/**
+ * Generates an MCQ explanation using Gemini API with 1 retry on failure
+ */
+async function generateMCQExplanationWithRetry(questionText, options, correctOption) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not defined in environment');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const prompt = buildMCQExplanationPrompt(questionText, options, correctOption);
+
+  let lastError = null;
+  const maxRetries = 1;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { rawText } = await callGeminiForExplanation(genAI, prompt);
+      const cleaned = cleanPlainText(rawText);
+      if (!cleaned) {
+        throw new Error('Empty response received from AI');
+      }
+      return cleaned;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Gemini explanation attempt ${attempt + 1} failed: ${err.message}`);
+      if (attempt < maxRetries) {
+        // Wait 1500ms before retry to handle transient rate limits or demand spikes
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    }
+  }
+
+  throw lastError || new Error('Explanation generation failed after retry');
+}
+
 // @route   GET /api/questions/sets?subject=<subject>&subtopic=<subtopic>
 // @desc    Get distinct assignmentSet values and count of questions per set for given subject/subtopic
 // @access  Public
@@ -466,6 +610,57 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/questions/:id/explanation
+// @desc    Get AI-generated explanation for an MCQ question (JWT protected)
+// @access  Private
+router.get('/:id/explanation', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Question ID is required' });
+    }
+
+    const question = await prisma.question.findUnique({
+      where: { id },
+    });
+
+    if (!question) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    // 1. If the Question already has a saved explanation, return it
+    if (question.explanation && question.explanation.trim()) {
+      return res.json({ explanation: question.explanation.trim() });
+    }
+
+    // 2. Otherwise call Gemini API with retry
+    try {
+      const generator = router.generateMCQExplanationWithRetry || generateMCQExplanationWithRetry;
+      const explanation = await generator(
+        question.questionText,
+        question.options,
+        question.correctOption
+      );
+
+      // Save the explanation on the Question record so it is cached for future requests
+      if (explanation) {
+        await prisma.question.update({
+          where: { id: question.id },
+          data: { explanation },
+        });
+      }
+
+      return res.json({ explanation });
+    } catch (aiErr) {
+      console.warn('Gemini explanation generation failed after retry:', aiErr.message);
+      return res.json({ explanation: null });
+    }
+  } catch (error) {
+    console.error('Error fetching question explanation:', error);
+    return res.status(500).json({ error: 'Failed to fetch explanation' });
+  }
+});
+
 // @route   POST /api/questions/submit
 // @desc    Submit an answer to a question (JWT protected)
 // @access  Private
@@ -661,5 +856,9 @@ router.parseCodingReview = parseCodingReview;
 router.buildCodingReviewPrompt = buildCodingReviewPrompt;
 router.callGeminiForReview = callGeminiForReview;
 router.MODEL_PREFERENCES = MODEL_PREFERENCES;
+router.generateMCQExplanationWithRetry = generateMCQExplanationWithRetry;
+router.buildMCQExplanationPrompt = buildMCQExplanationPrompt;
+router.cleanPlainText = cleanPlainText;
+router.callGeminiForExplanation = callGeminiForExplanation;
 
 module.exports = router;
