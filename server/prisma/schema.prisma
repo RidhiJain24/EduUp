@@ -66,19 +66,12 @@ model Submission {
   submittedAt DateTime @default(now())
 }
 
-model Badge {
-  id         String      @id @default(uuid())
-  name       String
-  criteria   String
-  iconType   String
-  userBadges UserBadge[]
-}
-
 model UserBadge {
   id         String   @id @default(uuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id])
-  badgeId    String
-  badge      Badge    @relation(fields: [badgeId], references: [id])
+  badgeKey   String
   unlockedAt DateTime @default(now())
+
+  @@unique([userId, badgeKey])
 }

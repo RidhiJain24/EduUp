@@ -10,6 +10,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const auth = require('../middleware/auth');
+const { checkAndAwardBadges } = require('./progress');
 
 const prisma = new PrismaClient();
 
@@ -764,6 +765,9 @@ router.post('/submit', auth, async (req, res) => {
         },
       });
 
+      // Check and award badges after successful submit
+      await checkAndAwardBadges(userId);
+
       return res.status(201).json({
         isCorrect,
         correctOption: question.correctOption,
@@ -809,6 +813,9 @@ router.post('/submit', auth, async (req, res) => {
           },
         });
 
+        // Check and award badges after successful submit & evaluation
+        await checkAndAwardBadges(userId);
+
         return res.status(201).json({
           status: 'reviewed',
           id: updatedSubmission.id,
@@ -828,6 +835,9 @@ router.post('/submit', auth, async (req, res) => {
         });
       } catch (aiErr) {
         console.warn('Coding question AI review failed or hit rate limits; preserving submission with pending_ai_review:', aiErr.message);
+        // Check and award badges even if AI review failed
+        await checkAndAwardBadges(userId);
+
         return res.status(201).json({
           status: 'pending_ai_review',
           id: submission.id,
@@ -837,6 +847,8 @@ router.post('/submit', auth, async (req, res) => {
         });
       }
     }
+
+    await checkAndAwardBadges(userId);
 
     return res.status(201).json({
       status: 'pending_ai_review',

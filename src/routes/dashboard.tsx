@@ -39,11 +39,13 @@ import {
   Clock,
   RefreshCw,
   Layers,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -53,6 +55,58 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+interface ProgressBadge {
+  badgeKey: string;
+  unlockedAt: string;
+}
+
+interface RecentFeedbackItem {
+  id: string;
+  submissionId?: string;
+  questionId?: string;
+  questionText: string;
+  subject: string;
+  subtopic: string;
+  aiScore: number | null;
+  feedback: string;
+  submittedAt: string;
+}
+
+interface WeeklyActivityItem {
+  date: string;
+  count: number;
+  submissions?: number;
+}
+
+interface ProgressSummary {
+  currentStreak: number;
+  longestStreak: number;
+  totalSubmissions: number;
+  assignmentsAttempted: number;
+  averageAiScore: number | null;
+  mcqAccuracy: number;
+  weeklyActivity: WeeklyActivityItem[];
+  recentFeedback: RecentFeedbackItem[];
+  badges: ProgressBadge[];
+}
+
+function formatTimeAgo(dateInput: string | Date | undefined): string {
+  if (!dateInput) return "Recently";
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  const now = new Date();
+  const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffSec < 60) return "Just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -79,7 +133,13 @@ function Logo() {
   );
 }
 
-function DashboardNav({ user }: { user: { name: string; email: string } }) {
+function DashboardNav({
+  user,
+  currentStreak,
+}: {
+  user: { name: string; email: string };
+  currentStreak?: number;
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navLinks = [
     { label: "Dashboard", href: "/dashboard", active: true },
@@ -110,6 +170,29 @@ function DashboardNav({ user }: { user: { name: string; email: string } }) {
         </div>
 
         <div className="ml-auto flex items-center gap-3">
+          {/* Navbar streak chip */}
+          {currentStreak !== undefined && (
+            <div
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                currentStreak > 0
+                  ? "border border-accent/40 bg-accent/10 text-accent shadow-xs"
+                  : "border border-border/80 bg-muted/60 text-muted-foreground"
+              }`}
+              title={currentStreak > 0 ? `${currentStreak} day streak` : "Start your streak today"}
+            >
+              <Flame
+                className={`h-4 w-4 ${
+                  currentStreak > 0 ? "fill-accent text-accent animate-pulse" : "text-muted-foreground"
+                }`}
+              />
+              <span className="hidden sm:inline">
+                {currentStreak > 0 ? `${currentStreak} day streak` : "Start your streak today"}
+              </span>
+              <span className="sm:hidden font-mono font-bold">
+                {currentStreak > 0 ? `${currentStreak}d` : "0d"}
+              </span>
+            </div>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -178,50 +261,108 @@ function DashboardNav({ user }: { user: { name: string; email: string } }) {
   );
 }
 
-function WelcomeHeader({ user }: { user: { name: string } }) {
+function WelcomeHeader({
+  user,
+  currentStreak = 0,
+}: {
+  user: { name: string };
+  currentStreak?: number;
+}) {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
+  const hasStreak = currentStreak > 0;
+
   return (
     <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-sm font-medium text-muted-foreground">{today}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-muted-foreground">{today}</p>
+          <span className="text-muted-foreground/40">•</span>
+          <span
+            className={`inline-flex items-center gap-1 text-xs font-bold ${
+              hasStreak ? "text-accent" : "text-muted-foreground"
+            }`}
+          >
+            <Flame className={`h-3.5 w-3.5 ${hasStreak ? "fill-accent text-accent" : ""}`} />
+            {hasStreak ? `${currentStreak} day streak` : "Start your streak today"}
+          </span>
+        </div>
         <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
           Welcome to EduUp, {user.name}! 🎉
         </h1>
         <p className="mt-3 max-w-xl text-base text-muted-foreground">
-          Let's start your learning journey today.
+          {hasStreak
+            ? `You're on a ${currentStreak} day streak — keep the learning momentum going!`
+            : "Start your streak today by practicing an assignment or exploring a course."}
         </p>
       </div>
-      <Button className="rounded-full bg-primary px-6 text-base font-semibold text-primary-foreground shadow-soft hover:-translate-y-0.5">
-        <Rocket className="mr-2 h-4 w-4" /> Explore courses
+      <Button
+        asChild
+        className="rounded-full bg-primary px-6 text-base font-semibold text-primary-foreground shadow-soft hover:-translate-y-0.5 cursor-pointer"
+      >
+        <a href="#courses">
+          <Rocket className="mr-2 h-4 w-4" /> Explore courses
+        </a>
       </Button>
     </section>
   );
 }
 
-const stats = [
-  { label: "Current streak", value: "0 days", icon: Flame },
-  { label: "Courses in progress", value: "0", icon: BookOpen },
-  { label: "Pending review", value: "0", icon: ClipboardCheck },
-  { label: "Badges earned", value: "0", icon: Award },
-];
+function QuickStats({
+  currentStreak = 0,
+  assignmentsAttempted = 0,
+  totalSubmissions = 0,
+  badgesCount = 0,
+}: {
+  currentStreak?: number;
+  assignmentsAttempted?: number;
+  totalSubmissions?: number;
+  badgesCount?: number;
+}) {
+  const stats = [
+    {
+      label: "Current streak",
+      value: `${currentStreak} day${currentStreak === 1 ? "" : "s"}`,
+      icon: Flame,
+      tint: "bg-accent/15 text-accent",
+    },
+    {
+      label: "Assignments attempted",
+      value: String(assignmentsAttempted),
+      icon: ClipboardCheck,
+      tint: "bg-primary/10 text-primary",
+    },
+    {
+      label: "Questions solved",
+      value: String(totalSubmissions),
+      icon: CheckCircle2,
+      tint: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      label: "Badges earned",
+      value: String(badgesCount),
+      icon: Award,
+      tint: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+    },
+  ];
 
-function QuickStats() {
   return (
     <section className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
       {stats.map((s) => (
         <div
           key={s.label}
-          className="rounded-2xl border border-dashed border-border bg-muted/40 p-6 transition-transform hover:-translate-y-0.5"
+          className="rounded-2xl border border-border bg-card p-6 shadow-soft transition-transform hover:-translate-y-0.5"
         >
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-muted text-muted-foreground">
+          <div className={`grid h-10 w-10 place-items-center rounded-xl ${s.tint}`}>
             <s.icon className="h-5 w-5" />
           </div>
-          <p className="mt-5 text-2xl font-bold text-muted-foreground">{s.value}</p>
-          <p className="text-sm text-muted-foreground/80">{s.label}</p>
+          <p className="mt-5 font-display text-2xl sm:text-3xl font-extrabold text-foreground">
+            {s.value}
+          </p>
+          <p className="text-sm text-muted-foreground font-medium">{s.label}</p>
         </div>
       ))}
     </section>
@@ -1273,26 +1414,35 @@ interface BadgeItem {
   progress?: string;
 }
 
-const badgeList: BadgeItem[] = [
+interface BadgeDefinition {
+  key: string;
+  name: string;
+  desc: string;
+  icon: any;
+  tier: BadgeTier;
+  progress?: string;
+}
+
+const ALL_BADGES: BadgeDefinition[] = [
   // Bronze Tier
-  { name: "First Steps", desc: "Complete your first lesson", icon: Star, earned: true, tier: "bronze" },
-  { name: "Streak Starter", desc: "Study 3 days in a row", icon: Flame, earned: true, tier: "bronze" },
+  { key: "first_steps", name: "First Steps", desc: "Submit your first question", icon: Star, tier: "bronze" },
+  { key: "streak_starter", name: "Streak Starter", desc: "Study 3 days in a row", icon: Flame, tier: "bronze" },
 
   // Silver Tier
-  { name: "Week Warrior", desc: "Maintain a 7-day study streak", icon: Calendar, earned: true, tier: "silver" },
-  { name: "Sharp Shooter", desc: "Score 90%+ on an assignment", icon: Target, earned: false, tier: "silver", progress: "Best: 85%" },
-  { name: "Marathoner", desc: "Log 10 hours of focus time", icon: Medal, earned: false, tier: "silver", progress: "4.5 / 10 hrs" },
-  { name: "Multi-Tasker", desc: "Study 3 subjects in 1 day", icon: Layers, earned: false, tier: "silver", progress: "1/3 subjects" },
+  { key: "week_warrior", name: "Week Warrior", desc: "Maintain a 7-day study streak", icon: Calendar, tier: "silver" },
+  { key: "sharp_shooter", name: "Sharp Shooter", desc: "Score 90%+ on a coding problem", icon: Target, tier: "silver" },
+  { key: "marathoner", name: "Marathoner", desc: "Log 10 hours of focus time", icon: Medal, tier: "silver", progress: "Locked" },
+  { key: "multi_tasker", name: "Multi-Tasker", desc: "Solve questions in 3 subjects in 1 day", icon: Layers, tier: "silver" },
 
   // Gold Tier
-  { name: "Deep Focus", desc: "Complete a 60-min focus session", icon: Clock, earned: false, tier: "gold", progress: "Best: 45 min" },
-  { name: "50 Day Streak", desc: "Maintain a 50-day study streak", icon: Zap, earned: false, tier: "gold", progress: "3/50 days" },
-  { name: "Perfectionist", desc: "Score 100% on 3 assignments", icon: CheckCircle2, earned: false, tier: "gold", progress: "0/3 perfect" },
-  { name: "Course Champ", desc: "Finish a full course", icon: Trophy, earned: false, tier: "gold", progress: "40% done" },
-  { name: "Comeback Kid", desc: "Resume after a 5+ day break", icon: RefreshCw, earned: false, tier: "gold", progress: "0/1" },
+  { key: "deep_focus", name: "Deep Focus", desc: "Complete a 60-min focus session", icon: Clock, tier: "gold", progress: "Locked" },
+  { key: "streak_50", name: "50 Day Streak", desc: "Maintain a 50-day study streak", icon: Zap, tier: "gold" },
+  { key: "perfectionist", name: "Perfectionist", desc: "Score 100% on 3 coding questions", icon: CheckCircle2, tier: "gold" },
+  { key: "course_champ", name: "Course Champ", desc: "Finish a full course", icon: Trophy, tier: "gold", progress: "Locked" },
+  { key: "comeback_kid", name: "Comeback Kid", desc: "Resume after a 5+ day break", icon: RefreshCw, tier: "gold", progress: "Locked" },
 
   // Platinum / Diamond Tier
-  { name: "100 Day Streak", desc: "Maintain a 100-day study streak", icon: Crown, earned: false, tier: "platinum", progress: "3/100 days" },
+  { key: "streak_100", name: "100 Day Streak", desc: "Maintain a 100-day study streak", icon: Crown, tier: "platinum" },
 ];
 
 const TIER_STYLES: Record<
@@ -1446,24 +1596,45 @@ function BadgeShield({ badge }: { badge: BadgeItem }) {
   );
 }
 
-function BadgesEmpty() {
+function BadgesSection({ badges = [] }: { badges?: ProgressBadge[] }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const earnedCount = badgeList.filter((b) => b.earned).length;
+
+  const earnedKeySet = useMemo(() => {
+    return new Set((badges || []).map((b) => b.badgeKey));
+  }, [badges]);
+
+  const badgeItems: BadgeItem[] = useMemo(() => {
+    return ALL_BADGES.map((b) => {
+      const earned = earnedKeySet.has(b.key);
+      return {
+        name: b.name,
+        desc: b.desc,
+        icon: b.icon,
+        tier: b.tier,
+        earned,
+        progress: earned ? "Unlocked" : b.progress || "In progress",
+      };
+    });
+  }, [earnedKeySet]);
+
+  const earnedCount = useMemo(() => {
+    return badgeItems.filter((b) => b.earned).length;
+  }, [badgeItems]);
 
   // Prioritize unlocked badges first, followed by locked badges
   const sortedBadges = useMemo(() => {
-    return [...badgeList].sort((a, b) => {
+    return [...badgeItems].sort((a, b) => {
       if (a.earned && !b.earned) return -1;
       if (!a.earned && b.earned) return 1;
       return 0;
     });
-  }, []);
+  }, [badgeItems]);
 
   // Show 6 badges (single row on desktop) when collapsed, or all 12 when expanded
   const visibleBadges = isExpanded ? sortedBadges : sortedBadges.slice(0, 6);
 
   // Find next locked badge dynamically for callout box
-  const nextGoal = badgeList.find((b) => !b.earned) || badgeList[0];
+  const nextGoal = sortedBadges.find((b) => !b.earned) || sortedBadges[0];
   const NextGoalIcon = nextGoal.icon;
   const nextGoalStyle = TIER_STYLES[nextGoal.tier];
 
@@ -1480,11 +1651,11 @@ function BadgesEmpty() {
               onClick={() => setIsExpanded((prev) => !prev)}
               className="text-xs font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1 bg-primary/10 px-2.5 py-1 rounded-full transition-colors hover:bg-primary/20"
             >
-              {isExpanded ? "Show less" : `Show all (${badgeList.length})`}
+              {isExpanded ? "Show less" : `Show all (${badgeItems.length})`}
             </button>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {earnedCount} of {badgeList.length} unlocked — hover an unlocked badge to see its tier shimmer.
+            {earnedCount} of {badgeItems.length} unlocked — hover an unlocked badge to see its tier shimmer.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-medium text-muted-foreground">
@@ -1503,14 +1674,14 @@ function BadgesEmpty() {
         </div>
 
         {/* Expand/Collapse Toggle Button at bottom of grid if collapsed */}
-        {!isExpanded && badgeList.length > 6 && (
+        {!isExpanded && badgeItems.length > 6 && (
           <div className="mt-6 flex justify-center border-t border-border/40 pt-4">
             <button
               type="button"
               onClick={() => setIsExpanded(true)}
               className="text-xs font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1 bg-muted/60 px-4 py-2 rounded-full hover:bg-muted transition-colors"
             >
-              Show all ({badgeList.length}) badges ↓
+              Show all ({badgeItems.length}) badges ↓
             </button>
           </div>
         )}
@@ -1537,12 +1708,14 @@ function BadgesEmpty() {
             <p className="text-sm text-muted-foreground">{nextGoal.desc}</p>
             {nextGoal.progress && (
               <p className="mt-1 text-xs font-semibold text-accent">
-                Progress: {nextGoal.progress}
+                Status: {nextGoal.progress}
               </p>
             )}
           </div>
-          <Button className="rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:-translate-y-0.5 shadow-xs">
-            Start a lesson
+          <Button asChild className="rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:-translate-y-0.5 shadow-xs">
+            <a href="#courses">
+              Start practicing
+            </a>
           </Button>
         </div>
       </div>
@@ -1550,49 +1723,268 @@ function BadgesEmpty() {
   );
 }
 
+function WeeklyActivitySection({
+  weeklyActivity = [],
+  totalSubmissions = 0,
+}: {
+  weeklyActivity?: WeeklyActivityItem[];
+  totalSubmissions?: number;
+}) {
+  const isNewLearner = totalSubmissions === 0;
 
-function ProgressEmpty() {
+  const weekTotal = useMemo(() => {
+    return (weeklyActivity || []).reduce(
+      (sum, item) => sum + (item.count || item.submissions || 0),
+      0
+    );
+  }, [weeklyActivity]);
+
+  const maxCount = useMemo(() => {
+    return Math.max(1, ...(weeklyActivity || []).map((item) => item.count || item.submissions || 0));
+  }, [weeklyActivity]);
+
   return (
-    <section id="progress" className="rounded-2xl border border-border bg-card p-8 shadow-soft">
-      <div className="mb-6 flex items-end justify-between">
+    <section id="progress" className="rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Weekly activity</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Track your minutes studied over time.</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            Weekly activity 📊
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Questions solved this week
+          </p>
         </div>
+        {!isNewLearner && (
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
+            <span>{weekTotal} solved past 7 days</span>
+          </div>
+        )}
       </div>
-      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-14 text-center">
-        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary">
-          <LineChart className="h-8 w-8" />
+
+      {isNewLearner ? (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-14 text-center">
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <LineChart className="h-8 w-8" />
+          </div>
+          <p className="max-w-md text-sm font-medium text-muted-foreground">
+            Your activity will show up here once you start solving questions.
+          </p>
+          <Button asChild className="rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
+            <a href="#courses">
+              <Rocket className="mr-1.5 h-4 w-4" /> Start practicing
+            </a>
+          </Button>
         </div>
-        <p className="max-w-md text-sm font-medium text-muted-foreground">
-          Your activity will show up here once you start studying.
-        </p>
-      </div>
+      ) : (
+        <div className="rounded-2xl border border-border/60 bg-muted/20 p-5 sm:p-6">
+          <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end h-56 pt-6 pb-2">
+            {(weeklyActivity || []).map((item) => {
+              const count = item.count || item.submissions || 0;
+              const dateObj = new Date(item.date + "T00:00:00");
+              const dayName = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+              const monthDay = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              const isToday = new Date().toISOString().slice(0, 10) === item.date;
+              const heightPercent = Math.max(12, Math.round((count / maxCount) * 100));
+
+              return (
+                <div
+                  key={item.date}
+                  className="flex flex-col items-center h-full justify-end group"
+                >
+                  {/* Tooltip / Count on top of bar */}
+                  <span
+                    className={`mb-2 text-xs font-bold transition-opacity ${
+                      count > 0
+                        ? "text-foreground"
+                        : "text-muted-foreground/50 opacity-0 group-hover:opacity-100"
+                    }`}
+                  >
+                    {count}
+                  </span>
+
+                  {/* Bar */}
+                  <div className="w-full max-w-[48px] h-36 flex items-end justify-center rounded-xl bg-muted/40 p-1">
+                    <div
+                      style={{ height: `${heightPercent}%` }}
+                      className={`w-full rounded-lg transition-all duration-500 ${
+                        count > 0
+                          ? isToday
+                            ? "bg-gradient-to-t from-primary to-accent shadow-md shadow-accent/20"
+                            : "bg-primary/85 group-hover:bg-primary shadow-xs"
+                          : "bg-muted-foreground/15 border border-dashed border-border/60"
+                      }`}
+                    />
+                  </div>
+
+                  {/* Day label */}
+                  <div className="mt-3 text-center">
+                    <p
+                      className={`text-xs font-semibold ${
+                        isToday ? "text-accent font-bold" : "text-foreground"
+                      }`}
+                    >
+                      {dayName}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground hidden sm:block">
+                      {monthDay}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
 
-function FeedbackEmpty() {
+function RecentFeedbackSection({
+  recentFeedback = [],
+  totalSubmissions = 0,
+}: {
+  recentFeedback?: RecentFeedbackItem[];
+  totalSubmissions?: number;
+}) {
+  const hasFeedback = recentFeedback && recentFeedback.length > 0;
+
   return (
     <section id="assignments">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">Recent AI feedback</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Instant feedback on every submission.</p>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+            Recent AI feedback 🤖
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Instant feedback on your coding submissions.
+          </p>
         </div>
       </div>
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-14 text-center">
-        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/15 text-accent">
-          <MessageSquare className="h-8 w-8" />
+
+      {!hasFeedback ? (
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-14 text-center">
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/15 text-accent">
+            <MessageSquare className="h-8 w-8" />
+          </div>
+          <p className="max-w-md text-sm font-medium text-muted-foreground">
+            Submit your first coding assignment to get AI feedback here.
+          </p>
+          <Button asChild variant="outline" className="rounded-full border-primary/30 text-primary hover:bg-primary/10">
+            <a href="#courses">
+              Find an assignment
+            </a>
+          </Button>
         </div>
-        <p className="max-w-md text-sm font-medium text-muted-foreground">
-          Submit your first assignment to get instant AI feedback here.
-        </p>
-        <Button variant="outline" className="rounded-full">
-          Find an assignment
-        </Button>
-      </div>
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {recentFeedback.map((item) => {
+            const score = item.aiScore;
+            const scoreBadgeColor =
+              score !== null && score >= 90
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                : score !== null && score >= 70
+                ? "bg-accent/10 text-accent border-accent/30"
+                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
+
+            return (
+              <div
+                key={item.id || item.submissionId || `${item.subject}-${item.subtopic}-${item.submittedAt}`}
+                className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-soft transition-transform hover:-translate-y-1"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                      {item.subject}
+                    </span>
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      {formatTimeAgo(item.submittedAt)}
+                    </span>
+                  </div>
+
+                  <h3 className="mt-2 font-display text-base font-bold text-foreground line-clamp-1">
+                    {item.subtopic}
+                  </h3>
+
+                  <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                    {item.questionText}
+                  </p>
+
+                  {item.feedback && (
+                    <div className="mt-3 rounded-xl border border-border/60 bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground leading-relaxed italic line-clamp-3">
+                        "{item.feedback}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 flex items-center justify-between pt-3 border-t border-border/50">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    AI Score
+                  </span>
+                  {score !== null ? (
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${scoreBadgeColor}`}
+                    >
+                      {score}/100
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Pending review
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
+  );
+}
+
+function QuickStatsSkeleton() {
+  return (
+    <section className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="rounded-2xl border border-border bg-card p-6 shadow-soft animate-pulse"
+        >
+          <div className="h-10 w-10 rounded-xl bg-muted" />
+          <div className="mt-4 h-7 w-20 rounded bg-muted" />
+          <div className="mt-2 h-4 w-28 rounded bg-muted/60" />
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function ProgressErrorCard({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-2xl border border-accent/30 bg-accent/5 p-6 shadow-soft text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent/20 text-accent shrink-0">
+          <AlertCircle className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="font-display text-base font-bold text-foreground">
+            Unable to load progress summary
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            We couldn't connect to the progress tracking service. Your data is safe.
+          </p>
+        </div>
+      </div>
+      <Button
+        onClick={onRetry}
+        variant="outline"
+        size="sm"
+        className="rounded-full border-accent/40 text-accent hover:bg-accent/10"
+      >
+        <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry
+      </Button>
+    </div>
   );
 }
 
@@ -1663,19 +2055,40 @@ function StudyNews() {
 function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(true);
+
+  const [progress, setProgress] = useState<ProgressSummary | null>(null);
+  const [progressLoading, setProgressLoading] = useState(true);
+  const [progressError, setProgressError] = useState<string | null>(null);
+
+  const loadProgress = useCallback(async () => {
+    setProgressLoading(true);
+    setProgressError(null);
+    try {
+      const data = await fetchAPI('/progress/summary');
+      setProgress(data);
+    } catch (err: any) {
+      console.error('Failed to load progress summary:', err);
+      setProgressError(err?.message || 'Failed to load progress');
+    } finally {
+      setProgressLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchAPI('/auth/me')
-      .then(setUser)
+      .then((u) => {
+        setUser(u);
+        loadProgress();
+      })
       .catch(() => {
         localStorage.removeItem('token');
         navigate({ to: "/login" });
       })
-      .finally(() => setLoading(false));
-  }, [navigate]);
+      .finally(() => setUserLoading(false));
+  }, [navigate, loadProgress]);
 
-  if (loading || !user) {
+  if (userLoading || !user) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -1686,16 +2099,35 @@ function Dashboard() {
     );
   }
 
+  const currentStreak = progress?.currentStreak ?? 0;
+  const assignmentsAttempted = progress?.assignmentsAttempted ?? 0;
+  const totalSubmissions = progress?.totalSubmissions ?? 0;
+  const badges = progress?.badges ?? [];
+  const weeklyActivity = progress?.weeklyActivity ?? [];
+  const recentFeedback = progress?.recentFeedback ?? [];
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-40 h-[300px] w-[300px] rounded-full bg-accent/20 blur-3xl" />
 
       <div className="relative z-10">
-        <DashboardNav user={user} />
+        <DashboardNav user={user} currentStreak={currentStreak} />
         <main className="mx-auto max-w-7xl space-y-16 px-4 py-10 sm:space-y-20 sm:px-6 sm:py-14">
-          <WelcomeHeader user={user} />
-          <QuickStats />
+          <WelcomeHeader user={user} currentStreak={currentStreak} />
+
+          {progressError && <ProgressErrorCard onRetry={loadProgress} />}
+
+          {progressLoading && !progress ? (
+            <QuickStatsSkeleton />
+          ) : (
+            <QuickStats
+              currentStreak={currentStreak}
+              assignmentsAttempted={assignmentsAttempted}
+              totalSubmissions={totalSubmissions}
+              badgesCount={badges.length}
+            />
+          )}
 
           <div className="grid min-w-0 gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">
             <div className="min-w-0 space-y-16 sm:space-y-20">
@@ -1707,9 +2139,35 @@ function Dashboard() {
           </div>
 
           <TakeABreak />
-          <ProgressEmpty />
-          <FeedbackEmpty />
-          <BadgesEmpty />
+
+          {progressLoading && !progress ? (
+            <div className="rounded-3xl border border-border bg-card p-8 shadow-soft animate-pulse">
+              <div className="h-6 w-40 rounded bg-muted" />
+              <div className="mt-2 h-4 w-60 rounded bg-muted/60" />
+              <div className="mt-6 h-48 rounded-2xl bg-muted/40" />
+            </div>
+          ) : (
+            <WeeklyActivitySection
+              weeklyActivity={weeklyActivity}
+              totalSubmissions={totalSubmissions}
+            />
+          )}
+
+          {progressLoading && !progress ? (
+            <div className="grid gap-5 md:grid-cols-3 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-40 rounded-2xl border border-border bg-card p-5" />
+              ))}
+            </div>
+          ) : (
+            <RecentFeedbackSection
+              recentFeedback={recentFeedback}
+              totalSubmissions={totalSubmissions}
+            />
+          )}
+
+          <BadgesSection badges={badges} />
+
           <StudyNews />
         </main>
       </div>
