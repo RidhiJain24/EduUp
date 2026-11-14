@@ -40,6 +40,7 @@ import {
   RefreshCw,
   Layers,
   AlertCircle,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,13 @@ import {
   type BreakGameType,
   type GameBestScores,
 } from "@/components/dashboard/TakeABreakGames";
+import {
+  NewsItem,
+  NewsCard,
+  NewsSkeletonGrid,
+  NewsErrorState,
+  selectCuratedDashboardNews,
+} from "@/components/news/NewsComponents";
 
 interface ProgressBadge {
   badgeKey: string;
@@ -1959,66 +1967,89 @@ function ProgressErrorCard({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-const newsItems = [
-  {
-    tag: "Internship",
-    tagIcon: Briefcase,
-    tagTint: "bg-primary/10 text-primary",
-    title: "Google Summer of Code 2027 applications open",
-    summary: "Students can now apply for GSoC 2027 — over 200 mentoring orgs participating this year.",
-  },
-  {
-    tag: "News",
-    tagIcon: Newspaper,
-    tagTint: "bg-accent/15 text-accent",
-    title: "New JavaScript framework trending on GitHub",
-    summary: "A lightweight reactive framework hit 30k stars in a week — here's what makes it different.",
-  },
-  {
-    tag: "Career Tip",
-    tagIcon: Lightbulb,
-    tagTint: "bg-emerald-500/10 text-emerald-600",
-    title: "Top 5 DSA patterns every interview asks",
-    summary: "Master sliding window, two pointers, and three more patterns that unlock 80% of problems.",
-  },
-  {
-    tag: "News",
-    tagIcon: Newspaper,
-    tagTint: "bg-accent/15 text-accent",
-    title: "AI copilots reshape entry-level developer roles",
-    summary: "How new grads are adapting workflows and what skills recruiters value most in 2027.",
-  },
-];
-
 function StudyNews() {
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchNews = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAPI("/news");
+      if (data && Array.isArray(data.items)) {
+        setNews(data.items);
+      } else {
+        setNews([]);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch news:", err);
+      setError("Couldn't load news right now");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
+
+  const curatedItems = useMemo(() => selectCuratedDashboardNews(news, 4), [news]);
+
   return (
-    <section>
-      <div className="mb-6 flex items-end justify-between">
+    <section id="news" className="space-y-6">
+      <div className="flex items-end justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
             What's happening in tech 📰
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Handpicked news, internships, and career tips for CS students.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Handpicked news, internships, and career tips for CS students.
+          </p>
         </div>
-        <a href="#" className="hidden text-sm font-semibold text-primary hover:underline sm:inline">View all</a>
+        <Link
+          to="/news"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors cursor-pointer"
+        >
+          View all <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-2 xl:grid-cols-4 lg:overflow-visible lg:px-0">
-        {newsItems.map((n) => (
-          <article
-            key={n.title}
-            className="flex w-72 shrink-0 snap-start flex-col rounded-2xl border border-border bg-card p-6 shadow-soft transition-transform hover:-translate-y-1 lg:w-auto"
+
+      {/* Loading Skeletons */}
+      {loading && news.length === 0 && (
+        <NewsSkeletonGrid count={4} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" />
+      )}
+
+      {/* Error State */}
+      {error && news.length === 0 && (
+        <NewsErrorState onRetry={fetchNews} />
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && curatedItems.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+          <p className="text-sm font-medium text-muted-foreground">
+            No tech news available right now.
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchNews}
+            className="text-xs text-primary hover:underline cursor-pointer"
           >
-            <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${n.tagTint}`}>
-              <n.tagIcon className="h-3.5 w-3.5" /> {n.tag}
-            </span>
-            <h3 className="mt-4 font-display text-base font-bold text-foreground">{n.title}</h3>
-            <p className="mt-2 flex-1 text-sm text-muted-foreground">{n.summary}</p>
-            <a href="#" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
-              Read more <ArrowRight className="h-3.5 w-3.5" />
-            </a>
-          </article>
-        ))}
-      </div>
+            Check again
+          </Button>
+        </div>
+      )}
+
+      {/* News Cards Grid: exactly 4 cards in single row (2x2 tablet, 1 col mobile) */}
+      {curatedItems.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {curatedItems.map((item) => (
+            <NewsCard key={item.id || item.url} item={item} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
