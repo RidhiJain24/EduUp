@@ -25,6 +25,7 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -62,6 +63,36 @@ interface Question {
   difficulty: "easy" | "medium" | "hard" | string;
   assignmentSet?: string;
   createdAt?: string;
+  aiScore?: number | null;
+  aiFeedback?: string | null;
+}
+
+interface CodingReview {
+  score?: number;
+  isCorrect?: boolean;
+  feedback?: string;
+  strengths?: string[];
+  improvements?: string[];
+  timeComplexity?: string;
+  suggestedApproach?: string;
+}
+
+interface SubmittedQuestionData {
+  submissionId: string;
+  submittedAt: string;
+  answerText: string;
+  isCorrect?: boolean | null;
+  correctOption?: number | null;
+  explanation?: string | null;
+  status?: string;
+  score?: number | null;
+  aiScore?: number | null;
+  feedback?: string | null;
+  strengths?: string[];
+  improvements?: string[];
+  timeComplexity?: string;
+  suggestedApproach?: string;
+  review?: CodingReview | null;
 }
 
 interface ResultQuestionItem {
@@ -81,6 +112,9 @@ interface ResultQuestionItem {
   isCorrect?: boolean | null;
   submitted?: boolean;
   submittedAt?: string | null;
+  submissionId?: string | null;
+  aiScore?: number | null;
+  aiFeedback?: string | null;
 }
 
 interface ResultsSummary {
@@ -90,6 +124,16 @@ interface ResultsSummary {
   correctCount?: number;
   pendingCount?: number;
   questions: ResultQuestionItem[];
+}
+
+function parseReviewSafe(aiFeedback?: string | null): CodingReview | null {
+  if (!aiFeedback) return null;
+  if (typeof aiFeedback === "object") return aiFeedback as CodingReview;
+  try {
+    return JSON.parse(aiFeedback);
+  } catch (e) {
+    return null;
+  }
 }
 
 function formatAssignmentTitle(setName: string): string {
@@ -123,20 +167,7 @@ function SolveAssignmentsPage() {
   // Question solving state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submittedQuestions, setSubmittedQuestions] = useState<
-    Record<
-      string,
-      {
-        submissionId: string;
-        submittedAt: string;
-        answerText: string;
-        isCorrect?: boolean | null;
-        correctOption?: number | null;
-        explanation?: string | null;
-        status?: string;
-      }
-    >
-  >({});
+  const [submittedQuestions, setSubmittedQuestions] = useState<Record<string, SubmittedQuestionData>>({});
   const [submitting, setSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [resultsData, setResultsData] = useState<ResultsSummary | null>(null);
@@ -215,6 +246,46 @@ function SolveAssignmentsPage() {
         throw new Error("Invalid response format from server");
       }
       setQuestions(data);
+
+      // Pre-load existing submissions for this set if user previously attempted it
+      try {
+        const results = await fetchAPI(`/questions/results?${params.toString()}`);
+        if (results && Array.isArray(results.questions)) {
+          const loadedAnswers: Record<string, string> = {};
+          const loadedSubmissions: Record<string, SubmittedQuestionData> = {};
+
+          results.questions.forEach((q: ResultQuestionItem) => {
+            if (q.submitted && (q.userAnswer || q.answer)) {
+              loadedAnswers[q.id] = q.userAnswer || q.answer || "";
+              const parsed = parseReviewSafe(q.aiFeedback);
+              loadedSubmissions[q.id] = {
+                submissionId: q.submissionId || "",
+                submittedAt: q.submittedAt || "",
+                answerText: q.userAnswer || q.answer || "",
+                isCorrect: q.isCorrect,
+                correctOption: q.correctOption,
+                explanation: q.explanation || parsed?.feedback,
+                status: q.aiScore !== null && q.aiScore !== undefined ? "reviewed" : "pending_ai_review",
+                score: q.aiScore ?? parsed?.score,
+                aiScore: q.aiScore ?? parsed?.score,
+                feedback: parsed?.feedback || q.explanation,
+                strengths: parsed?.strengths,
+                improvements: parsed?.improvements,
+                timeComplexity: parsed?.timeComplexity,
+                suggestedApproach: parsed?.suggestedApproach,
+                review: parsed,
+              };
+            }
+          });
+
+          if (Object.keys(loadedAnswers).length > 0) {
+            setAnswers((prev) => ({ ...loadedAnswers, ...prev }));
+            setSubmittedQuestions((prev) => ({ ...loadedSubmissions, ...prev }));
+          }
+        }
+      } catch (e) {
+        // Ignore pre-load error if not logged in or no submissions exist yet
+      }
     } catch (err: any) {
       console.error("Error loading set questions:", err);
       setQuestionsError(err.message || `Failed to load questions for ${setName}. Please try again.`);
@@ -348,6 +419,8 @@ function SolveAssignmentsPage() {
         }),
       });
 
+      const parsedReview = res.review || parseReviewSafe(res.aiFeedback);
+
       setSubmittedQuestions((prev) => ({
         ...prev,
         [currentQuestion.id]: {
@@ -356,8 +429,16 @@ function SolveAssignmentsPage() {
           answerText: answer,
           isCorrect: res.isCorrect,
           correctOption: res.correctOption,
-          explanation: res.explanation,
+          explanation: res.explanation || res.feedback || parsedReview?.feedback,
           status: res.status,
+          score: res.score ?? res.aiScore ?? parsedReview?.score,
+          aiScore: res.aiScore ?? res.score ?? parsedReview?.score,
+          feedback: res.feedback || parsedReview?.feedback,
+          strengths: res.strengths || parsedReview?.strengths,
+          improvements: res.improvements || parsedReview?.improvements,
+          timeComplexity: res.timeComplexity || parsedReview?.timeComplexity,
+          suggestedApproach: res.suggestedApproach || parsedReview?.suggestedApproach,
+          review: parsedReview,
         },
       }));
 
@@ -371,9 +452,13 @@ function SolveAssignmentsPage() {
             description: res.explanation || "Review the correct answer below.",
           });
         }
+      } else if (res.status === "pending_ai_review") {
+        toast.info("Submission saved", {
+          description: "AI review unavailable right now, your answer is saved.",
+        });
       } else {
-        toast.success("Answer submitted successfully!", {
-          description: "Saved and pending automated AI review.",
+        toast.success("AI review complete! 🎉", {
+          description: `Score: ${res.score ?? res.aiScore ?? parsedReview?.score ?? 0}/100`,
         });
       }
     } catch (err: any) {
@@ -785,6 +870,17 @@ function SolveAssignmentsPage() {
                 const numPending = resultsData?.numberPendingReview ?? 0;
                 const accuracy = mcqList.length > 0 ? Math.round((numCorrect / mcqList.length) * 100) : 0;
 
+                const scoredCoding = codingList.filter(
+                  (q) => typeof q.aiScore === "number" && !isNaN(q.aiScore)
+                );
+                const avgScore =
+                  scoredCoding.length > 0
+                    ? Math.round(
+                        scoredCoding.reduce((sum, q) => sum + (q.aiScore ?? 0), 0) /
+                          scoredCoding.length
+                      )
+                    : null;
+
                 let headerTitle = "";
                 let headerSub = "";
 
@@ -794,15 +890,25 @@ function SolveAssignmentsPage() {
                   headerSub = `${accuracy}% accuracy on ${formatAssignmentTitle(selectedSet || "Set 1")}`;
                 } else if (mcqList.length === 0) {
                   // Coding-based set
-                  const submittedCount = resultsData
-                    ? resultsData.questions.filter((q) => q.submitted).length
-                    : Object.keys(submittedQuestions).length;
-                  headerTitle = `${submittedCount} submitted, pending AI review`;
-                  headerSub = `All code solutions are saved and pending automated AI review`;
+                  if (avgScore !== null) {
+                    headerTitle = `Average AI score: ${avgScore}/100`;
+                    headerSub = `Evaluated across ${scoredCoding.length} coding question${scoredCoding.length === 1 ? "" : "s"} with instant AI feedback`;
+                  } else {
+                    const submittedCount = resultsData
+                      ? resultsData.questions.filter((q) => q.submitted).length
+                      : Object.keys(submittedQuestions).length;
+                    headerTitle = `${submittedCount} submitted, pending AI review`;
+                    headerSub = "All code solutions are saved and pending automated AI review";
+                  }
                 } else {
                   // Mixed set
-                  headerTitle = `You got ${numCorrect} of ${mcqList.length} correct`;
-                  headerSub = `${numPending} coding submission${numPending === 1 ? "" : "s"} pending AI review`;
+                  if (avgScore !== null) {
+                    headerTitle = `Average AI score: ${avgScore}/100`;
+                    headerSub = `${numCorrect} of ${mcqList.length} MCQ correct • ${scoredCoding.length} coding question${scoredCoding.length === 1 ? "" : "s"} evaluated`;
+                  } else {
+                    headerTitle = `You got ${numCorrect} of ${mcqList.length} correct`;
+                    headerSub = `${numPending} coding submission${numPending === 1 ? "" : "s"} pending AI review`;
+                  }
                 }
 
                 return (
@@ -828,28 +934,87 @@ function SolveAssignmentsPage() {
 
               {/* Summary Statistics Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                <div className="rounded-2xl border border-border bg-card p-4 text-center">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">Total Questions</span>
-                  <p className="mt-1 font-display text-2xl font-bold text-foreground">
-                    {resultsData ? resultsData.totalQuestions : totalQuestions}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase flex items-center justify-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Correct (MCQ)
-                  </span>
-                  <p className="mt-1 font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {resultsData ? resultsData.numberCorrect : "-"}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4 text-center">
-                  <span className="text-xs font-semibold text-accent uppercase flex items-center justify-center gap-1">
-                    <Sparkles className="h-3.5 w-3.5" /> Pending Review
-                  </span>
-                  <p className="mt-1 font-display text-2xl font-bold text-accent">
-                    {resultsData ? resultsData.numberPendingReview : "-"}
-                  </p>
-                </div>
+                {(() => {
+                  const codingList = resultsData
+                    ? resultsData.questions.filter((q) => q.type?.toLowerCase() === "coding")
+                    : questions.filter((q) => q.type?.toLowerCase() === "coding");
+                  const mcqList = resultsData
+                    ? resultsData.questions.filter((q) => q.type?.toLowerCase() === "mcq")
+                    : questions.filter((q) => q.type?.toLowerCase() === "mcq");
+                  const totalQ = resultsData?.totalQuestions ?? totalQuestions;
+                  const numCorrect = resultsData?.numberCorrect ?? 0;
+                  const scoredCoding = codingList.filter(
+                    (q) => typeof q.aiScore === "number" && !isNaN(q.aiScore)
+                  );
+                  const avgScore =
+                    scoredCoding.length > 0
+                      ? Math.round(
+                          scoredCoding.reduce((sum, q) => sum + (q.aiScore ?? 0), 0) /
+                            scoredCoding.length
+                        )
+                      : null;
+
+                  if (codingList.length > 0 && mcqList.length === 0) {
+                    return (
+                      <>
+                        <div className="rounded-2xl border border-border bg-card p-4 text-center">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase">Total Problems</span>
+                          <p className="mt-1 font-display text-2xl font-bold text-foreground">
+                            {totalQ}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-accent/30 bg-accent/10 p-4 text-center">
+                          <span className="text-xs font-semibold text-accent uppercase flex items-center justify-center gap-1">
+                            <Sparkles className="h-3.5 w-3.5" /> Average AI Score
+                          </span>
+                          <p className="mt-1 font-display text-2xl font-bold text-accent">
+                            {avgScore !== null ? `${avgScore}/100` : "Pending"}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
+                          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase flex items-center justify-center gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Evaluated
+                          </span>
+                          <p className="mt-1 font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                            {scoredCoding.length} of {codingList.length}
+                          </p>
+                        </div>
+                      </>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <div className="rounded-2xl border border-border bg-card p-4 text-center">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase">Total Questions</span>
+                        <p className="mt-1 font-display text-2xl font-bold text-foreground">
+                          {totalQ}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase flex items-center justify-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Correct (MCQ)
+                        </span>
+                        <p className="mt-1 font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                          {numCorrect}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4 text-center">
+                        <span className="text-xs font-semibold text-accent uppercase flex items-center justify-center gap-1">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          {codingList.length > 0 ? "Average AI Score" : "Pending Review"}
+                        </span>
+                        <p className="mt-1 font-display text-2xl font-bold text-accent">
+                          {codingList.length > 0
+                            ? avgScore !== null
+                              ? `${avgScore}/100`
+                              : "Pending"
+                            : resultsData ? resultsData.numberPendingReview : "-"}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Question Breakdown List */}
@@ -875,6 +1040,8 @@ function SolveAssignmentsPage() {
                       const isMcq = q.type?.toLowerCase() === "mcq";
                       const isCoding = q.type?.toLowerCase() === "coding";
                       const isExpanded = Boolean(expandedQuestions[q.id]);
+                      const parsedReview = isCoding ? parseReviewSafe(q.aiFeedback) : null;
+                      const hasAiScore = typeof q.aiScore === "number" && !isNaN(q.aiScore);
 
                       return (
                         <div
@@ -886,7 +1053,11 @@ function SolveAssignmentsPage() {
                                 : q.isCorrect === false
                                 ? "border-destructive/35 bg-destructive/5 dark:bg-destructive/20"
                                 : "border-border bg-card/60"
-                              : "border-accent/30 bg-accent/5 dark:bg-accent/10"
+                              : hasAiScore
+                              ? q.aiScore! >= 70
+                                ? "border-emerald-500/35 bg-emerald-500/5 dark:bg-emerald-950/20"
+                                : "border-accent/40 bg-accent/5 dark:bg-accent/10"
+                              : "border-border bg-card/60"
                           }`}
                         >
                           <div className="flex items-start gap-3">
@@ -907,9 +1078,17 @@ function SolveAssignmentsPage() {
                                   </div>
                                 )
                               ) : isCoding ? (
-                                <div className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground shadow-sm">
-                                  <Sparkles className="h-4 w-4" />
-                                </div>
+                                hasAiScore ? (
+                                  <div className={`grid h-7 w-7 place-items-center rounded-lg text-white shadow-sm ${
+                                    q.aiScore! >= 70 ? "bg-emerald-600" : "bg-accent text-accent-foreground"
+                                  }`}>
+                                    <Sparkles className="h-4 w-4" />
+                                  </div>
+                                ) : (
+                                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500 text-white shadow-sm">
+                                    <Clock className="h-4 w-4" />
+                                  </div>
+                                )
                               ) : null}
                             </div>
 
@@ -937,9 +1116,21 @@ function SolveAssignmentsPage() {
                                       </Badge>
                                     )
                                   ) : isCoding ? (
-                                    <Badge className="bg-accent/20 text-accent border border-accent/30 text-[11px] gap-1 font-bold">
-                                      <Sparkles className="h-3 w-3" /> Pending AI Review
-                                    </Badge>
+                                    hasAiScore ? (
+                                      <Badge
+                                        className={`${
+                                          q.aiScore! >= 70
+                                            ? "bg-emerald-600 text-white"
+                                            : "bg-accent text-accent-foreground"
+                                        } text-[11px] gap-1 font-bold shadow-sm`}
+                                      >
+                                        <Sparkles className="h-3 w-3" /> AI Score: {q.aiScore}/100
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="border-amber-500/40 text-amber-600 dark:text-amber-400 text-[11px] gap-1 font-medium">
+                                        <Clock className="h-3 w-3" /> Pending Review
+                                      </Badge>
+                                    )
                                   ) : null}
                                 </div>
                               </div>
@@ -959,7 +1150,7 @@ function SolveAssignmentsPage() {
                                         : q.isCorrect === false
                                         ? "text-destructive font-bold line-through"
                                         : "italic text-muted-foreground"
-                                      : "font-mono bg-muted/60 px-2 py-0.5 rounded text-foreground font-medium"
+                                      : "font-mono bg-muted/60 px-2 py-0.5 rounded text-foreground font-medium text-xs break-all"
                                   }
                                 >
                                   {q.userAnswer || q.answer || "No answer submitted"}
@@ -971,7 +1162,7 @@ function SolveAssignmentsPage() {
                                 <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/20 p-3.5 space-y-1.5">
                                   <div className="text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                                     <Check className="h-4 w-4 stroke-[2.5]" />
-                                    <span>Correct Answer: {q.correctAnswer || (q.correctOption !== null && q.options ? q.options[q.correctOption] : "N/A")}</span>
+                                    <span>Correct Answer: {q.correctAnswer || (q.correctOption !== null && q.correctOption !== undefined && q.options ? q.options[q.correctOption] : "N/A")}</span>
                                   </div>
                                   {q.explanation && (
                                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -1040,13 +1231,135 @@ function SolveAssignmentsPage() {
                                 </div>
                               )}
 
-                              {/* Coding Question Info */}
+                              {/* Coding Question AI Review & Feedback Summary */}
                               {isCoding && (
-                                <div className="mt-3 rounded-xl border border-accent/25 bg-accent/5 p-3 text-xs text-muted-foreground space-y-1">
-                                  <div className="font-semibold text-accent flex items-center gap-1.5">
-                                    <Sparkles className="h-3.5 w-3.5" /> Pending AI Review
-                                  </div>
-                                  <p>Your code implementation is queued for automated AI evaluation and test cases verification.</p>
+                                <div className="mt-3.5 space-y-3">
+                                  {hasAiScore || parsedReview ? (
+                                    <div className="rounded-xl border border-accent/30 bg-card/90 p-4 space-y-3 shadow-sm">
+                                      {/* Header with Score and Time Complexity */}
+                                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-accent">
+                                          <Sparkles className="h-4 w-4" />
+                                          <span>AI Code Review</span>
+                                          {q.isCorrect !== null && q.isCorrect !== undefined && (
+                                            <Badge
+                                              className={`text-[10px] py-0 px-2 font-bold uppercase ${
+                                                q.isCorrect ? "bg-emerald-600 text-white" : "bg-destructive text-destructive-foreground"
+                                              }`}
+                                            >
+                                              {q.isCorrect ? "Passed" : "Needs Work"}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          {parsedReview?.timeComplexity && (
+                                            <Badge variant="outline" className="text-[10px] font-mono border-border bg-muted/40 gap-1">
+                                              <Clock className="h-2.5 w-2.5 text-accent" />
+                                              <span>{parsedReview.timeComplexity}</span>
+                                            </Badge>
+                                          )}
+                                          <Badge
+                                            className={`text-xs font-extrabold ${
+                                              (q.aiScore ?? parsedReview?.score ?? 0) >= 70
+                                                ? "bg-emerald-600 text-white"
+                                                : "bg-accent text-accent-foreground"
+                                            }`}
+                                          >
+                                            Score: {q.aiScore ?? parsedReview?.score ?? 0}/100
+                                          </Badge>
+                                        </div>
+                                      </div>
+
+                                      {/* Feedback Summary */}
+                                      <div className="space-y-1">
+                                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                          Feedback Summary
+                                        </span>
+                                        <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                                          {parsedReview?.feedback || q.explanation || "Your solution was evaluated by AI."}
+                                        </p>
+                                      </div>
+
+                                      {/* Toggle Detailed Analysis */}
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleQuestionExpand(q.id)}
+                                        className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1 cursor-pointer pt-0.5"
+                                      >
+                                        <span>{isExpanded ? "Hide detailed analysis" : "Show detailed analysis (Strengths, Improvements, Suggested Approach)"}</span>
+                                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                      </button>
+
+                                      {isExpanded && parsedReview && (
+                                        <div className="space-y-3 pt-2.5 border-t border-border/50 animate-in fade-in duration-200">
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {/* Green Strengths */}
+                                            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-1.5">
+                                              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
+                                                <span>Strengths</span>
+                                              </span>
+                                              {parsedReview.strengths && parsedReview.strengths.length > 0 ? (
+                                                <ul className="text-xs space-y-1.5 text-foreground">
+                                                  {parsedReview.strengths.map((s: string, idx: number) => (
+                                                    <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                                                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5 stroke-[2.5]" />
+                                                      <span>{s}</span>
+                                                    </li>
+                                                  ))}
+                                                </ul>
+                                              ) : (
+                                                <p className="text-xs text-muted-foreground italic">No strengths highlighted.</p>
+                                              )}
+                                            </div>
+
+                                            {/* Orange Improvements */}
+                                            <div className="rounded-xl border border-accent/40 bg-accent/5 p-3 space-y-1.5">
+                                              <span className="text-[11px] font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                                <AlertCircle className="h-3.5 w-3.5 stroke-[2.5]" />
+                                                <span>Improvements</span>
+                                              </span>
+                                              {parsedReview.improvements && parsedReview.improvements.length > 0 ? (
+                                                <ul className="text-xs space-y-1.5 text-foreground">
+                                                  {parsedReview.improvements.map((imp: string, idx: number) => (
+                                                    <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                                                      <ArrowRight className="h-3.5 w-3.5 text-accent shrink-0 mt-0.5 stroke-[2.5]" />
+                                                      <span>{imp}</span>
+                                                    </li>
+                                                  ))}
+                                                </ul>
+                                              ) : (
+                                                <p className="text-xs text-muted-foreground italic">No improvements suggested.</p>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* Suggested Approach */}
+                                          {parsedReview.suggestedApproach && (
+                                            <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
+                                              <span className="text-[11px] font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                                <Lightbulb className="h-3.5 w-3.5 text-accent" />
+                                                <span>Suggested Approach</span>
+                                              </span>
+                                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                                {parsedReview.suggestedApproach}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-muted-foreground space-y-1">
+                                      <div className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        <span>AI review unavailable right now, your answer is saved</span>
+                                      </div>
+                                      <p className="leading-relaxed">
+                                        Your code solution has been saved. Automated AI evaluation was not completed at submit time.
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1369,39 +1682,51 @@ function SolveAssignmentsPage() {
                 </div>
               )}
 
-              {/* Submitted Auto-Grading Feedback Banner */}
+              {/* Loading Banner while AI review is in progress */}
+              {submitting && currentQuestion.type === "coding" && (
+                <div className="rounded-2xl border border-accent/40 bg-accent/5 p-4 sm:p-5 shadow-soft animate-in fade-in duration-300">
+                  <div className="flex items-center gap-3.5">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground shadow-sm">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <h5 className="font-display text-sm font-bold text-foreground flex items-center gap-2">
+                        <span>AI is reviewing your code...</span>
+                        <Sparkles className="h-4 w-4 text-accent animate-pulse" />
+                      </h5>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Analyzing correctness, edge cases, algorithmic time complexity, and code quality.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Submitted Auto-Grading Feedback Banner / Real AI Review Card */}
               {isCurrentSubmitted && (
-                <div
-                  className={`flex items-start sm:items-center gap-3.5 rounded-2xl border p-4 sm:p-5 shadow-soft animate-in fade-in duration-300 ${
-                    currentQuestion.type === "mcq"
-                      ? currentSubmission?.isCorrect
+                currentQuestion.type === "mcq" ? (
+                  <div
+                    className={`flex items-start sm:items-center gap-3.5 rounded-2xl border p-4 sm:p-5 shadow-soft animate-in fade-in duration-300 ${
+                      currentSubmission?.isCorrect
                         ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100"
                         : "border-destructive/40 bg-destructive/10 text-destructive-950 dark:text-destructive-100"
-                      : "border-accent/40 bg-gradient-to-r from-accent/15 via-accent/10 to-transparent"
-                  }`}
-                >
-                  <div
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-sm ${
-                      currentQuestion.type === "mcq"
-                        ? currentSubmission?.isCorrect
-                          ? "bg-emerald-600 text-white"
-                          : "bg-destructive text-destructive-foreground"
-                        : "bg-accent text-accent-foreground"
                     }`}
                   >
-                    {currentQuestion.type === "mcq" ? (
-                      currentSubmission?.isCorrect ? (
+                    <div
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-sm ${
+                        currentSubmission?.isCorrect
+                          ? "bg-emerald-600 text-white"
+                          : "bg-destructive text-destructive-foreground"
+                      }`}
+                    >
+                      {currentSubmission?.isCorrect ? (
                         <CheckCircle2 className="h-5 w-5" />
                       ) : (
                         <XCircle className="h-5 w-5" />
-                      )
-                    ) : (
-                      <Sparkles className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div className="space-y-1 w-full min-w-0">
-                    {currentQuestion.type === "mcq" ? (
-                      currentSubmission?.isCorrect ? (
+                      )}
+                    </div>
+                    <div className="space-y-1 w-full min-w-0">
+                      {currentSubmission?.isCorrect ? (
                         <>
                           <h5 className="font-display text-sm font-bold flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                             <span>Correct! Well done</span>
@@ -1430,20 +1755,163 @@ function SolveAssignmentsPage() {
                                 : "Review the question and try to understand the concept.")}
                           </p>
                         </>
-                      )
-                    ) : (
-                      <>
-                        <h5 className="font-display text-sm font-bold flex items-center gap-1.5 text-foreground">
-                          <span>Submitted! AI review coming soon</span>
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        </h5>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Your code has been saved. Automated AI grading, code analysis, and feedback will evaluate this solution.
-                        </p>
-                      </>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : currentQuestion.type === "coding" ? (
+                  currentSubmission?.status === "pending_ai_review" ||
+                  (currentSubmission?.score === null &&
+                    currentSubmission?.score === undefined &&
+                    currentSubmission?.aiScore === null &&
+                    currentSubmission?.aiScore === undefined &&
+                    !currentSubmission?.feedback &&
+                    !currentSubmission?.review) ? (
+                    /* Fallback when review is pending or rate-limited */
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/20 p-4 sm:p-5 shadow-soft animate-in fade-in duration-300">
+                      <div className="flex items-start sm:items-center gap-3.5">
+                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500 text-white shadow-sm">
+                          <Clock className="h-5 w-5" />
+                        </div>
+                        <div className="space-y-1 min-w-0">
+                          <h5 className="font-display text-sm font-bold text-foreground flex items-center gap-1.5">
+                            <span>AI review unavailable right now, your answer is saved</span>
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          </h5>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            Your code implementation was successfully recorded. The automated AI evaluation is temporarily delayed or experiencing high demand.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Real AI Review Card for Coding */
+                    <div className="rounded-2xl border border-accent/30 bg-card/90 p-5 sm:p-6 shadow-soft animate-in fade-in duration-300 space-y-4">
+                      {/* Header with Title, Status Badge, Time Complexity and Score Badge */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-accent-foreground shadow-sm">
+                            <Sparkles className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-display text-sm font-bold text-foreground flex items-center gap-2">
+                              <span>AI Code Review</span>
+                              {currentSubmission?.isCorrect !== null && currentSubmission?.isCorrect !== undefined && (
+                                <Badge
+                                  className={`text-[10px] py-0 px-2 font-bold uppercase ${
+                                    currentSubmission.isCorrect
+                                      ? "bg-emerald-600 text-white"
+                                      : "bg-destructive text-destructive-foreground"
+                                  }`}
+                                >
+                                  {currentSubmission.isCorrect ? "Passed" : "Needs Work"}
+                                </Badge>
+                              )}
+                            </h4>
+                            <span className="text-[11px] text-muted-foreground">Automated multi-factor evaluation</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {/* Time Complexity Badge */}
+                          {currentSubmission?.timeComplexity && (
+                            <Badge variant="outline" className="rounded-full bg-muted/60 border-border px-2.5 py-1 text-xs font-mono font-medium gap-1 text-foreground">
+                              <Clock className="h-3 w-3 text-accent" />
+                              <span>{currentSubmission.timeComplexity}</span>
+                            </Badge>
+                          )}
+
+                          {/* Score Badge (e.g. 85/100) */}
+                          <Badge
+                            className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-extrabold shadow-sm ${
+                              (currentSubmission?.score ?? currentSubmission?.aiScore ?? 0) >= 70
+                                ? "bg-emerald-600 text-white"
+                                : "bg-accent text-accent-foreground"
+                            }`}
+                          >
+                            {currentSubmission?.score ?? currentSubmission?.aiScore ?? 0}/100
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Overall Feedback */}
+                      {(currentSubmission?.feedback || currentSubmission?.explanation) && (
+                        <div className="space-y-1">
+                          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                            Overall Feedback
+                          </span>
+                          <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                            {currentSubmission.feedback || currentSubmission.explanation}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Strengths & Improvements in responsive columns */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                        {/* Green Strengths List */}
+                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/20 p-3.5 space-y-2">
+                          <h6 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
+                            <span>Strengths</span>
+                          </h6>
+                          {currentSubmission?.strengths && currentSubmission.strengths.length > 0 ? (
+                            <ul className="space-y-1.5 text-xs text-foreground">
+                              {currentSubmission.strengths.map((str, idx) => (
+                                <li key={idx} className="flex items-start gap-2 leading-relaxed">
+                                  <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5 stroke-[2.5]" />
+                                  <span>{str}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">No specific strengths highlighted.</p>
+                          )}
+                        </div>
+
+                        {/* Orange Improvements List */}
+                        <div className="rounded-xl border border-accent/40 bg-accent/5 p-3.5 space-y-2">
+                          <h6 className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
+                            <AlertCircle className="h-3.5 w-3.5 stroke-[2.5]" />
+                            <span>Improvements</span>
+                          </h6>
+                          {currentSubmission?.improvements && currentSubmission.improvements.length > 0 ? (
+                            <ul className="space-y-1.5 text-xs text-foreground">
+                              {currentSubmission.improvements.map((imp, idx) => (
+                                <li key={idx} className="flex items-start gap-2 leading-relaxed">
+                                  <ArrowRight className="h-3.5 w-3.5 text-accent shrink-0 mt-0.5 stroke-[2.5]" />
+                                  <span>{imp}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">No improvements suggested.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Suggested Approach */}
+                      {currentSubmission?.suggestedApproach && (
+                        <div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-1">
+                          <span className="text-[11px] font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
+                            <Lightbulb className="h-3.5 w-3.5 text-accent" />
+                            <span>Suggested Approach</span>
+                          </span>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {currentSubmission.suggestedApproach}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                ) : (
+                  /* Generic Fallback for non-coding non-mcq */
+                  <div className="flex items-center gap-3.5 rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-soft">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    <div>
+                      <h5 className="font-display text-sm font-bold text-foreground">Answer Submitted</h5>
+                      <p className="text-xs text-muted-foreground">Your answer has been saved successfully.</p>
+                    </div>
+                  </div>
+                )
               )}
 
               {/* Card Actions: Submit & Navigation */}
@@ -1471,7 +1939,8 @@ function SolveAssignmentsPage() {
                     >
                       {submitting ? (
                         <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Submitting...
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                          {currentQuestion.type === "coding" ? "AI Reviewing..." : "Submitting..."}
                         </>
                       ) : (
                         <>

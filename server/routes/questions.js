@@ -1,9 +1,222 @@
+const path = require('path');
+if (!process.env.GEMINI_API_KEY) {
+  try {
+    require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+  } catch (e) {}
+}
+
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const auth = require('../middleware/auth');
 
 const prisma = new PrismaClient();
+
+const MODEL_PREFERENCES = [
+  'gemini-2.0-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
+  'gemini-2.5-flash',
+];
+
+/**
+ * Builds prompt for reviewing coding questions in any language
+ */
+function buildCodingReviewPrompt(questionText, studentCode) {
+  return `You are an expert programming instructor and code reviewer.
+Analyze the following student code submission for a coding problem. The code may be written in any programming language (e.g., Java, Python, C++, JavaScript).
+
+Problem Statement:
+${questionText}
+
+Student Code:
+${studentCode}
+
+Perform a thorough evaluation for correctness, edge cases, algorithmic efficiency, and code quality.
+Return ONLY a valid JSON object (no markdown fences, no backticks, no preamble or extra text) strictly conforming to this structure:
+{
+  "score": 0-100,
+  "isCorrect": boolean,
+  "feedback": "string (2-3 sentences)",
+  "strengths": ["string"],
+  "improvements": ["string"],
+  "timeComplexity": "string",
+  "suggestedApproach": "string (a hint, not a full solution)"
+}
+
+Guidelines for the fields:
+- score: Integer between 0 and 100 based on correctness, test case coverage, efficiency, and code quality.
+- isCorrect: Boolean (true if the solution correctly solves the problem and passes all expected test cases/edge cases, false otherwise).
+- feedback: Exactly 2 to 3 concise, constructive sentences summarizing evaluation of their solution.
+- strengths: Array of strings highlighting key strengths of the implementation.
+- improvements: Array of strings highlighting specific areas for improvement, edge case bugs, or optimizations.
+- timeComplexity: Asymptotic time complexity in Big-O notation (e.g., "O(n)", "O(n log n)", "O(1)").
+- suggestedApproach: A helpful hint or conceptual suggestion for the optimal approach (a hint only, NOT a full code solution).`;
+}
+
+/**
+ * Strips markdown code fences if present and parses coding review JSON
+ */
+function parseCodingReview(text) {
+  if (!text || typeof text !== 'string') {
+    throw new Error('Empty response received from AI');
+  }
+
+  let cleaned = text.trim();
+
+  // Strip markdown code fences (```json ... ``` or ``` ... ```)
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+  }
+
+  // Extract JSON between outermost curly braces if surrounding text exists
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+
+  const parsed = JSON.parse(cleaned);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Parsed AI review is not a valid JSON object');
+  }
+
+  // Validate and clamp score
+  const numScore = Number(parsed.score);
+  if (isNaN(numScore)) {
+    throw new Error(`Invalid score in AI review: ${parsed.score}`);
+  }
+  const score = Math.max(0, Math.min(100, Math.round(numScore)));
+
+  // Validate and parse isCorrect
+  let isCorrect;
+  if (typeof parsed.isCorrect === 'boolean') {
+    isCorrect = parsed.isCorrect;
+  } else if (typeof parsed.isCorrect === 'string') {
+    isCorrect = parsed.isCorrect.toLowerCase() === 'true';
+  } else if (typeof parsed.isCorrect !== 'undefined') {
+    isCorrect = Boolean(parsed.isCorrect);
+  } else {
+    isCorrect = score >= 70;
+  }
+
+  // Validate feedback
+  const feedback =
+    typeof parsed.feedback === 'string' && parsed.feedback.trim()
+      ? parsed.feedback.trim()
+      : 'No feedback provided.';
+
+  // Validate strengths
+  const strengths = Array.isArray(parsed.strengths)
+    ? parsed.strengths.map((s) => String(s).trim()).filter(Boolean)
+    : (parsed.strengths ? [String(parsed.strengths).trim()] : []);
+
+  // Validate improvements
+  const improvements = Array.isArray(parsed.improvements)
+    ? parsed.improvements.map((i) => String(i).trim()).filter(Boolean)
+    : (parsed.improvements ? [String(parsed.improvements).trim()] : []);
+
+  // Validate timeComplexity
+  const timeComplexity =
+    typeof parsed.timeComplexity === 'string' && parsed.timeComplexity.trim()
+      ? parsed.timeComplexity.trim()
+      : 'N/A';
+
+  // Validate suggestedApproach
+  const suggestedApproach =
+    typeof parsed.suggestedApproach === 'string' && parsed.suggestedApproach.trim()
+      ? parsed.suggestedApproach.trim()
+      : 'No suggested approach provided.';
+
+  return {
+    score,
+    isCorrect,
+    feedback,
+    strengths,
+    improvements,
+    timeComplexity,
+    suggestedApproach,
+  };
+}
+
+/**
+ * Call Gemini model with model preferences fallback
+ */
+async function callGeminiForReview(genAI, prompt) {
+  let lastError = null;
+
+  for (const modelName of MODEL_PREFERENCES) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const rawText = response.text();
+      return { rawText, modelUsed: modelName };
+    } catch (err) {
+      lastError = err;
+      const isUnavailable =
+        err.message?.includes('404') ||
+        err.message?.includes('no longer available') ||
+        err.message?.includes('not found') ||
+        err.message?.includes('503') ||
+        err.message?.includes('429') ||
+        err.message?.includes('RESOURCE_EXHAUSTED') ||
+        err.message?.includes('quota') ||
+        err.status === 404 ||
+        err.status === 503 ||
+        err.status === 429;
+
+      if (isUnavailable) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error('No available Gemini model could be reached.');
+}
+
+/**
+ * Evaluates coding submission using Gemini with 1 retry on failure
+ */
+async function evaluateCodingSubmission(questionText, studentCode) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not defined in environment');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const prompt = buildCodingReviewPrompt(questionText, studentCode);
+
+  let lastError = null;
+  const maxRetries = 1;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { rawText } = await callGeminiForReview(genAI, prompt);
+      const parsedReview = parseCodingReview(rawText);
+      return parsedReview;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Gemini evaluation attempt ${attempt + 1} failed: ${err.message}`);
+      if (attempt < maxRetries) {
+        // Wait 2000ms before retry to handle transient rate limits or demand spikes
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+  }
+
+  throw lastError || new Error('Coding evaluation failed after retry');
+}
 
 // @route   GET /api/questions/sets?subject=<subject>&subtopic=<subtopic>
 // @desc    Get distinct assignmentSet values and count of questions per set for given subject/subtopic
@@ -133,11 +346,9 @@ router.get('/results', auth, async (req, res) => {
         }
       }
 
-      if (isMcq && isCorrect === true) {
+      if (isCorrect === true) {
         numberCorrect++;
-      }
-
-      if (isCoding && sub) {
+      } else if (isCoding && sub && isCorrect === null) {
         numberPendingReview++;
       }
 
@@ -161,7 +372,16 @@ router.get('/results', auth, async (req, res) => {
           explanation = `The correct answer is ${correctAnswer}`;
         }
       } else if (isCoding) {
-        explanation = sub ? 'Pending AI evaluation and feedback' : 'No submission recorded yet';
+        if (sub && sub.aiFeedback) {
+          try {
+            const parsed = JSON.parse(sub.aiFeedback);
+            explanation = parsed.feedback || 'AI evaluation complete.';
+          } catch (e) {
+            explanation = sub.aiFeedback;
+          }
+        } else {
+          explanation = sub ? 'Pending AI evaluation and feedback' : 'No submission recorded yet';
+        }
       }
 
       return {
@@ -182,6 +402,8 @@ router.get('/results', auth, async (req, res) => {
         submitted: Boolean(sub),
         submittedAt: sub ? sub.submittedAt : null,
         submissionId: sub ? sub.id : null,
+        aiScore: sub ? sub.aiScore : null,
+        aiFeedback: sub ? sub.aiFeedback : null,
       };
     });
 
@@ -358,7 +580,9 @@ router.post('/submit', auth, async (req, res) => {
       });
     }
 
-    // For "coding" (or non-mcq) type questions: don't grade yet - just save submission
+    const isCoding = question.type?.toLowerCase() === 'coding';
+
+    // For "coding" (or non-mcq) type questions: save submission first
     let finalAnswerText = '';
     if (answerText !== undefined && answerText !== null) {
       finalAnswerText = String(answerText);
@@ -377,6 +601,48 @@ router.post('/submit', auth, async (req, res) => {
       },
     });
 
+    if (isCoding) {
+      try {
+        const review = await evaluateCodingSubmission(question.questionText, finalAnswerText);
+
+        const updatedSubmission = await prisma.submission.update({
+          where: { id: submission.id },
+          data: {
+            aiScore: review.score,
+            aiFeedback: JSON.stringify(review),
+            isCorrect: review.isCorrect,
+          },
+        });
+
+        return res.status(201).json({
+          status: 'reviewed',
+          id: updatedSubmission.id,
+          submissionId: updatedSubmission.id,
+          submittedAt: updatedSubmission.submittedAt,
+          isCorrect: review.isCorrect,
+          score: review.score,
+          aiScore: review.score,
+          feedback: review.feedback,
+          explanation: review.feedback,
+          strengths: review.strengths,
+          improvements: review.improvements,
+          timeComplexity: review.timeComplexity,
+          suggestedApproach: review.suggestedApproach,
+          review,
+          submission: updatedSubmission,
+        });
+      } catch (aiErr) {
+        console.warn('Coding question AI review failed or hit rate limits; preserving submission with pending_ai_review:', aiErr.message);
+        return res.status(201).json({
+          status: 'pending_ai_review',
+          id: submission.id,
+          submissionId: submission.id,
+          submittedAt: submission.submittedAt,
+          submission,
+        });
+      }
+    }
+
     return res.status(201).json({
       status: 'pending_ai_review',
       id: submission.id,
@@ -389,5 +655,11 @@ router.post('/submit', auth, async (req, res) => {
     return res.status(500).json({ error: 'Failed to submit answer' });
   }
 });
+
+router.evaluateCodingSubmission = evaluateCodingSubmission;
+router.parseCodingReview = parseCodingReview;
+router.buildCodingReviewPrompt = buildCodingReviewPrompt;
+router.callGeminiForReview = callGeminiForReview;
+router.MODEL_PREFERENCES = MODEL_PREFERENCES;
 
 module.exports = router;
