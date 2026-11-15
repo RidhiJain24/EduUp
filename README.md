@@ -4,7 +4,7 @@
 
 EduUp is a full-stack learning platform for Computer Science students. Instead of searching YouTube for hours, a student picks a subject and topic, gets curated playlists, and then practises with AI-generated questions. MCQs are graded instantly, and coding answers get a detailed AI review.
 
-**Live demo:** https://ridhijain24-eduup.ridhi-dev.workers.dev
+**Live demo:** https://eduup.ridhi-dev.workers.dev
 
 > The backend runs on a free hosting plan and sleeps when idle, so the very first request after a while can take up to a minute.
 
